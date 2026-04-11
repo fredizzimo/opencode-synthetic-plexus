@@ -17,7 +17,19 @@ function parsePrice(priceStr: string): number {
   return value * 1_000_000;
 }
 
-function convertSyntheticModelToOpenCode(model: SyntheticModel, modelOptions?: Record<string, { options?: Record<string, unknown> }>): OpenCodeModelConfig {
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key]) && result[key] && typeof result[key] === "object") {
+      result[key] = deepMerge(result[key] as Record<string, unknown>, source[key] as Record<string, unknown>);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Record<string, unknown>): OpenCodeModelConfig {
   const modelConfig: OpenCodeModelConfig = {};
 
   const parts = model.id.split("/");
@@ -62,9 +74,8 @@ function convertSyntheticModelToOpenCode(model: SyntheticModel, modelOptions?: R
   }
   modelConfig.cost = cost;
 
-  const aliasName = parts[parts.length - 1];
-  if (modelOptions?.[aliasName]?.options) {
-    modelConfig.options = modelOptions[aliasName].options;
+  if (userConfig) {
+    return deepMerge(modelConfig, userConfig) as OpenCodeModelConfig;
   }
 
   return modelConfig;
@@ -74,7 +85,7 @@ export function buildProviderConfig(
   models: SyntheticModel[],
   plexusUrl: string,
   providerName: string,
-  modelOptions?: Record<string, { options?: Record<string, unknown> }>
+  modelOptions?: Record<string, Record<string, unknown>>
 ): {
   npm: string;
   name: string;
@@ -85,7 +96,7 @@ export function buildProviderConfig(
 
   for (const model of models) {
     const aliasName = model.id.split("/").pop() || model.id;
-    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions);
+    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions?.[aliasName]);
   }
 
   return {
@@ -101,7 +112,7 @@ export function updateOpenCodeConfig(
   models: SyntheticModel[],
   plexusUrl: string,
   providerName: string,
-  modelOptions?: Record<string, { options?: Record<string, unknown> }>
+  modelOptions?: Record<string, Record<string, unknown>>
 ): Record<string, unknown> {
   const providerConfig = buildProviderConfig(models, plexusUrl, providerName, modelOptions);
 

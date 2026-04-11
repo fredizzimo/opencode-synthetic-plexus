@@ -102,6 +102,8 @@ export interface OpenCodeModelConfig {
     cache_write?: number;
   };
   options?: Record<string, unknown>;
+  variants?: Record<string, Record<string, unknown>>;
+  [key: string]: unknown;
 }
 
 export interface SyncResult {

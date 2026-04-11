@@ -9,7 +9,7 @@ interface PluginConfig {
   providerName?: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
-  modelOptions?: Record<string, { options?: Record<string, unknown> }>;
+  modelOptions?: Record<string, Record<string, unknown>>;
   syncEnabled?: boolean;
   verbose?: boolean;
 }
