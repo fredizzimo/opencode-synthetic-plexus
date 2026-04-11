@@ -115,7 +115,7 @@ You can customize model configuration by providing additional options that will 
 ```json
 {
   "modelOptions": {
-    "GLM-5": {
+    "claude-sonnet-4-20250514": {
       "options": { "temperature": 0.7 },
       "variants": {
         "thinking": {
@@ -131,7 +131,7 @@ You can customize model configuration by providing additional options that will 
 }
 ```
 
-User-provided options are deep-merged with the generated configuration, so you can override any property. To use a variant, select it in OpenCode by cycling through variants or specifying it in the model name: `synthetic-plexus/GLM-5:thinking`.
+User-provided options are deep-merged with the generated configuration, so you can override any property. To use a variant, select it in OpenCode by cycling through variants or specifying it in the model name: `synthetic-plexus/claude-sonnet-4-20250514:thinking`.
 
 See the [OpenCode models documentation](https://opencode.ai/docs/models/) for all available configuration options.
 
