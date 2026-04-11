@@ -1,21 +1,21 @@
 # OpenCode Synthetic Plexus Plugin
 
-An OpenCode plugin that syncs AI models from the Synthetic API to Plexus (a model proxy server) and dynamically updates OpenCode configuration with those models.
+An [OpenCode](https://opencode.ai) plugin that syncs AI models from [Synthetic](https://synthetic.new/) to OpenCode, with optional [Plexus](https://github.com/anomalyco/plexus) integration for model proxying.
 
 ## Features
 
-- Syncs models from Synthetic API to Plexus on OpenCode startup
-- Dynamically updates OpenCode config with model metadata
-- Can operate without Plexus, using Synthetic API directly
+- Syncs models from Synthetic to OpenCode on startup
+- Optional Plexus integration for model proxying
+- Dynamically updates OpenCode config with model metadata and pricing
+- Syncs model list and pricing to Plexus when enabled
 - Configurable provider name and URLs
 - Environment variable substitution for secure credential handling
 - Per-model options and custom variants support
-- Verbose logging option for debugging
 
 ## Prerequisites
 
 - [OpenCode](https://opencode.ai) installed
-- Access to a [Synthetic API](https://github.com/anomalyco/synthetic) instance
+- Access to a [Synthetic API](https://synthetic.new/) instance
 - (Optional) Access to a [Plexus](https://github.com/anomalyco/plexus) server
 
 ## Installation
@@ -69,6 +69,8 @@ Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
 }
 ```
 
+Get your Synthetic API key from [synthetic.new](https://synthetic.new/).
+
 ### With Plexus
 
 Set `plexusAdminKey` to enable Plexus mode:
@@ -82,6 +84,9 @@ Set `plexusAdminKey` to enable Plexus mode:
   "verbose": false
 }
 ```
+
+- `syntheticApiKey`: Your Synthetic API key from [synthetic.new](https://synthetic.new/)
+- `plexusAdminKey`: Admin key for Plexus management API (see Plexus documentation)
 
 You can also create a project-specific config at `.opencode/synthetic-plexus.json` which will override the global config.
 
@@ -110,7 +115,7 @@ You can use environment variable substitution in the config file using the `{env
 
 ### Model Options
 
-You can customize model configuration by providing additional options that will be merged with the auto-generated config:
+You can customize model configuration and define variants by providing options that will be merged with the auto-generated config:
 
 ```json
 {
@@ -131,7 +136,10 @@ You can customize model configuration by providing additional options that will 
 }
 ```
 
-User-provided options are deep-merged with the generated configuration, so you can override any property. To use a variant, select it in OpenCode by cycling through variants or specifying it in the model name: `synthetic-plexus/claude-sonnet-4-20250514:thinking`.
+- **options**: Default options applied to the base model
+- **variants**: Named configurations that can be selected in OpenCode
+
+User-provided options are deep-merged with the generated configuration, so you can override any property.
 
 See the [OpenCode models documentation](https://opencode.ai/docs/models/) for all available configuration options.
 
@@ -139,36 +147,21 @@ See the [OpenCode models documentation](https://opencode.ai/docs/models/) for al
 
 1. On OpenCode startup, the plugin loads configuration from global and project config files
 2. It fetches available models from the Synthetic API
-3. If `plexusAdminKey` is set:
+3. It updates OpenCode's in-memory configuration with Synthetic API as the provider URL directly
+4. If `plexusAdminKey` is set:
    - It syncs those models to Plexus, creating/updating providers and aliases
    - It updates OpenCode's in-memory configuration with Plexus as the provider URL
-4. If `plexusAdminKey` is not set (default):
-   - It updates OpenCode's in-memory configuration with Synthetic API as the provider URL directly
 
 ## Connecting the Provider in OpenCode
 
-After configuring the plugin, you need to connect the provider in OpenCode:
+After configuring the plugin, connect the provider in OpenCode:
 
 1. Run `opencode provider login`
 2. Scroll down and select `other`
 3. Type the provider name (e.g., `synthetic` or `synthetic-plexus` depending on your config)
-4. Enter the API key (see below for how to obtain it)
-
-### Getting an API Key
-
-#### Without Plexus (Direct Synthetic API)
-
-Use your Synthetic API key directly. This is the same key configured in `syntheticApiKey` in your plugin config.
-
-#### With Plexus
-
-Plexus requires API keys for authentication. Configure keys through the Admin UI:
-
-1. Open the Plexus dashboard (default: `http://localhost:4000`)
-2. Navigate to the **Keys** section
-3. Add a new key with a secret (e.g., `sk-plexus-my-key`)
-
-Use the `secret` value as the API key when connecting the provider in OpenCode.
+4. Enter the API key:
+   - **Direct Synthetic**: Use the same Synthetic API key from your config
+   - **Plexus**: Create an API key through the Plexus dashboard (Keys section) and use its secret
 
 ## Publishing
 

@@ -1,7 +1,7 @@
 {
   "name": "opencode-synthetic-plexus",
   "version": "1.0.0",
-  "description": "OpenCode plugin that syncs models from Synthetic API to Plexus and updates OpenCode config",
+  "description": "OpenCode plugin that syncs AI models from Synthetic to OpenCode, with optional Plexus integration",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
