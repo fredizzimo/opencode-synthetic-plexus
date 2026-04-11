@@ -1,0 +1,148 @@
+# OpenCode Synthetic Plexus Plugin
+
+An OpenCode plugin that syncs AI models from the Synthetic API to Plexus (a model proxy server) and dynamically updates OpenCode configuration with those models.
+
+## Features
+
+- Syncs models from Synthetic API to Plexus on OpenCode startup
+- Dynamically updates OpenCode config with Plexus models
+- Configurable provider name and Plexus URL
+- Environment variable substitution for secure credential handling
+- Per-model options and custom variants support
+- Verbose logging option for debugging
+
+## Prerequisites
+
+- [OpenCode](https://opencode.ai) installed
+- Access to a [Synthetic API](https://github.com/anomalyco/synthetic) instance
+- Access to a [Plexus](https://github.com/anomalyco/plexus) server
+
+## Installation
+
+### From npm (Recommended)
+
+```bash
+npm install opencode-synthetic-plexus
+```
+
+Add the plugin to your OpenCode configuration (`~/.config/opencode/opencode.json`):
+
+```json
+{
+  "plugins": [
+    "opencode-synthetic-plexus"
+  ]
+}
+```
+
+### From Source
+
+```bash
+git clone <repository-url>
+cd opencode-synthetic-plexus
+npm install
+npm run build
+```
+
+Add the plugin to your OpenCode configuration:
+
+```json
+{
+  "plugins": [
+    "/path/to/opencode-synthetic-plexus"
+  ]
+}
+```
+
+## Configuration
+
+Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
+
+```json
+{
+  "plexusUrl": "http://localhost:8080",
+  "providerName": "synthetic-plexus",
+  "syntheticApiKey": "your-synthetic-api-key",
+  "plexusAdminKey": "your-plexus-admin-key",
+  "syncEnabled": true,
+  "verbose": false
+}
+```
+
+You can also create a project-specific config at `.opencode/synthetic-plexus.json` which will override the global config.
+
+## Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `plexusUrl` | string | `http://localhost:8080` | URL of the Plexus server |
+| `providerName` | string | `synthetic-plexus` | Name for the provider in Plexus and OpenCode |
+| `syntheticApiKey` | string | - | API key for Synthetic API (required) |
+| `plexusAdminKey` | string | - | Admin key for Plexus management API (required) |
+| `syncEnabled` | boolean | `true` | Enable/disable model syncing |
+| `verbose` | boolean | `false` | Enable verbose logging |
+| `modelOptions` | object | `{}` | Custom model config merged with generated config |
+
+### Environment Variables
+
+You can use environment variable substitution in the config file using the `{env:VAR_NAME}` syntax:
+
+```json
+{
+  "syntheticApiKey": "{env:SYNTHETIC_API_KEY}",
+  "plexusAdminKey": "{env:PLEXUS_ADMIN_KEY}"
+}
+```
+
+Environment variables can also be used as fallbacks:
+- `SYNTHETIC_API_KEY` - Falls back if `syntheticApiKey` not set in config
+- `PLEXUS_ADMIN_KEY` - Falls back if `plexusAdminKey` not set in config
+- `PLEXUS_URL` - Falls back if `plexusUrl` not set in config
+
+### Model Options
+
+You can customize model configuration by providing additional options that will be merged with the auto-generated config:
+
+```json
+{
+  "modelOptions": {
+    "GLM-5": {
+      "options": { "temperature": 0.7 },
+      "variants": {
+        "thinking": {
+          "reasoningEffort": "high",
+          "textVerbosity": "low"
+        },
+        "fast": {
+          "reasoningEffort": "low"
+        }
+      }
+    }
+  }
+}
+```
+
+User-provided options are deep-merged with the generated configuration, so you can override any property. To use a variant, select it in OpenCode by cycling through variants or specifying it in the model name: `synthetic-plexus/GLM-5:thinking`.
+
+See the [OpenCode models documentation](https://opencode.ai/docs/models/) for all available configuration options.
+
+## How It Works
+
+1. On OpenCode startup, the plugin loads configuration from global and project config files
+2. It fetches available models from the Synthetic API
+3. It syncs those models to Plexus, creating/updating providers and aliases
+4. It updates OpenCode's in-memory configuration with the synced models
+
+## Publishing
+
+To publish a new version to npm:
+
+```bash
+npm login
+npm run build
+npm publish
+```
+
+## License
+
+MIT
