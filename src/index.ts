@@ -1,11 +1,13 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
-import { syncModels, setVerbose as setSyncVerbose } from "./sync-models.js";
+import type { SyntheticModel } from "./types.js";
+import { syncModels, fetchSyntheticModels, setVerbose as setSyncVerbose } from "./sync-models.js";
 import { updateOpenCodeConfig, setVerbose as setUpdateVerbose } from "./update-models.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
 interface PluginConfig {
   plexusUrl?: string;
+  syntheticApiUrl?: string;
   providerName?: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
@@ -15,7 +17,7 @@ interface PluginConfig {
 }
 
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
-const DEFAULT_PROVIDER_NAME = "synthetic-plexus";
+const DEFAULT_SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1";
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
 function substituteEnvVars(value: string): string {
@@ -67,7 +69,8 @@ async function getPluginConfig(directory: string): Promise<PluginConfig> {
 
   return {
     plexusUrl: merged.plexusUrl || process.env.PLEXUS_URL || DEFAULT_PLEXUS_URL,
-    providerName: merged.providerName || DEFAULT_PROVIDER_NAME,
+    syntheticApiUrl: merged.syntheticApiUrl || process.env.SYNTHETIC_API_URL || DEFAULT_SYNTHETIC_API_URL,
+    providerName: merged.providerName || (merged.plexusAdminKey ? "synthetic-plexus" : "synthetic"),
     syntheticApiKey: merged.syntheticApiKey || process.env.SYNTHETIC_API_KEY,
     plexusAdminKey: merged.plexusAdminKey || process.env.PLEXUS_ADMIN_KEY,
     modelOptions: merged.modelOptions || {},
@@ -86,7 +89,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
         return;
       }
 
-      if (!pluginConfig.syntheticApiKey || !pluginConfig.plexusAdminKey) {
+      if (!pluginConfig.syntheticApiKey) {
         return;
       }
 
@@ -94,15 +97,25 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       setUpdateVerbose(pluginConfig.verbose ?? false);
 
       process.env.SYNTHETIC_API_KEY = pluginConfig.syntheticApiKey;
-      process.env.PLEXUS_ADMIN_KEY = pluginConfig.plexusAdminKey;
 
       try {
-        const syncResult = await syncModels(pluginConfig.plexusUrl!);
+        let models: SyntheticModel[];
+        let baseURL: string;
+
+        if (pluginConfig.plexusAdminKey) {
+          process.env.PLEXUS_ADMIN_KEY = pluginConfig.plexusAdminKey;
+          const syncResult = await syncModels(pluginConfig.plexusUrl!);
+          models = syncResult.models;
+          baseURL = `${pluginConfig.plexusUrl!}/v1`;
+        } else {
+          models = await fetchSyntheticModels();
+          baseURL = pluginConfig.syntheticApiUrl!;
+        }
 
         updateOpenCodeConfig(
           cfg as unknown as Record<string, unknown>,
-          syncResult.models,
-          pluginConfig.plexusUrl!,
+          models,
+          baseURL,
           pluginConfig.providerName!,
           pluginConfig.modelOptions
         );

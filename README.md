@@ -4,9 +4,10 @@ An OpenCode plugin that syncs AI models from the Synthetic API to Plexus (a mode
 
 ## Features
 
-- Syncs models from Synthetic API to Plexus on OpenCode startup
-- Dynamically updates OpenCode config with Plexus models
-- Configurable provider name and Plexus URL
+- Syncs models from Synthetic API to Plexus on OpenCode startup (optional)
+- Dynamically updates OpenCode config with model metadata
+- Can operate without Plexus, using Synthetic API directly
+- Configurable provider name and URLs
 - Environment variable substitution for secure credential handling
 - Per-model options and custom variants support
 - Verbose logging option for debugging
@@ -15,7 +16,7 @@ An OpenCode plugin that syncs AI models from the Synthetic API to Plexus (a mode
 
 - [OpenCode](https://opencode.ai) installed
 - Access to a [Synthetic API](https://github.com/anomalyco/synthetic) instance
-- Access to a [Plexus](https://github.com/anomalyco/plexus) server
+- (Optional) Access to a [Plexus](https://github.com/anomalyco/plexus) server
 
 ## Installation
 
@@ -58,10 +59,25 @@ Add the plugin to your OpenCode configuration:
 
 Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
 
+### Default (direct Synthetic API)
+
 ```json
 {
-  "plexusUrl": "http://localhost:8080",
+  "providerName": "synthetic",
+  "syntheticApiKey": "your-synthetic-api-key",
+  "syncEnabled": true,
+  "verbose": false
+}
+```
+
+### With Plexus
+
+Set `plexusAdminKey` to enable Plexus mode:
+
+```json
+{
   "providerName": "synthetic-plexus",
+  "plexusUrl": "http://localhost:8080",
   "syntheticApiKey": "your-synthetic-api-key",
   "plexusAdminKey": "your-plexus-admin-key",
   "syncEnabled": true,
@@ -75,10 +91,11 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `plexusUrl` | string | `http://localhost:8080` | URL of the Plexus server |
-| `providerName` | string | `synthetic-plexus` | Name for the provider in Plexus and OpenCode |
+| `plexusUrl` | string | `http://localhost:8080` | URL of the Plexus server (used when `plexusAdminKey` is set) |
+| `syntheticApiUrl` | string | `https://api.synthetic.new/openai/v1` | URL of the Synthetic API (used when `plexusAdminKey` is not set) |
+| `providerName` | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config |
 | `syntheticApiKey` | string | - | API key for Synthetic API (required) |
-| `plexusAdminKey` | string | - | Admin key for Plexus management API (required) |
+| `plexusAdminKey` | string | - | Admin key for Plexus management API (enables Plexus mode when set) |
 | `syncEnabled` | boolean | `true` | Enable/disable model syncing |
 | `verbose` | boolean | `false` | Enable verbose logging |
 | `modelOptions` | object | `{}` | Custom model config merged with generated config |
@@ -98,6 +115,7 @@ Environment variables can also be used as fallbacks:
 - `SYNTHETIC_API_KEY` - Falls back if `syntheticApiKey` not set in config
 - `PLEXUS_ADMIN_KEY` - Falls back if `plexusAdminKey` not set in config
 - `PLEXUS_URL` - Falls back if `plexusUrl` not set in config
+- `SYNTHETIC_API_URL` - Falls back if `syntheticApiUrl` not set in config
 
 ### Model Options
 
@@ -130,8 +148,11 @@ See the [OpenCode models documentation](https://opencode.ai/docs/models/) for al
 
 1. On OpenCode startup, the plugin loads configuration from global and project config files
 2. It fetches available models from the Synthetic API
-3. It syncs those models to Plexus, creating/updating providers and aliases
-4. It updates OpenCode's in-memory configuration with the synced models
+3. If `plexusAdminKey` is set:
+   - It syncs those models to Plexus, creating/updating providers and aliases
+   - It updates OpenCode's in-memory configuration with Plexus as the provider URL
+4. If `plexusAdminKey` is not set (default):
+   - It updates OpenCode's in-memory configuration with Synthetic API as the provider URL directly
 
 ## Publishing
 

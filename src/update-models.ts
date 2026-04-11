@@ -83,7 +83,7 @@ function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Rec
 
 export function buildProviderConfig(
   models: SyntheticModel[],
-  plexusUrl: string,
+  baseURL: string,
   providerName: string,
   modelOptions?: Record<string, Record<string, unknown>>
 ): {
@@ -102,7 +102,7 @@ export function buildProviderConfig(
   return {
     npm: "@ai-sdk/openai-compatible",
     name: providerName,
-    options: { baseURL: `${plexusUrl}/v1` },
+    options: { baseURL },
     models: modelsConfig,
   };
 }
@@ -110,11 +110,11 @@ export function buildProviderConfig(
 export function updateOpenCodeConfig(
   config: Record<string, unknown>,
   models: SyntheticModel[],
-  plexusUrl: string,
+  baseURL: string,
   providerName: string,
   modelOptions?: Record<string, Record<string, unknown>>
 ): Record<string, unknown> {
-  const providerConfig = buildProviderConfig(models, plexusUrl, providerName, modelOptions);
+  const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions);
 
   const provider = (config.provider as Record<string, unknown>) || {};
   provider[providerName] = providerConfig as unknown;
