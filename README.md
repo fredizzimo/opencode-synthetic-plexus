@@ -164,6 +164,31 @@ npm run build
 npm publish
 ```
 
+## Connecting the Provider in OpenCode
+
+After configuring the plugin, you need to connect the provider in OpenCode:
+
+1. Run `opencode provider login`
+2. Scroll down and select `other`
+3. Type the provider name (e.g., `synthetic` or `synthetic-plexus` depending on your config)
+4. Enter the API key (see below for how to obtain it)
+
+### Getting an API Key
+
+#### Without Plexus (Direct Synthetic API)
+
+Use your Synthetic API key directly. This is the same key configured in `syntheticApiKey` in your plugin config.
+
+#### With Plexus
+
+Plexus requires API keys for authentication. Configure keys through the Admin UI:
+
+1. Open the Plexus dashboard (default: `http://localhost:4000`)
+2. Navigate to the **Keys** section
+3. Add a new key with a secret (e.g., `sk-plexus-my-key`)
+
+Use the `secret` value as the API key when connecting the provider in OpenCode.
+
 ## License
 
 MIT
