@@ -16,8 +16,17 @@
   ],
   "scripts": {
     "build": "node build.js && tsc --emitDeclarationOnly",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fredizzimo/opencode-synthetic-plexus.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fredizzimo/opencode-synthetic-plexus/issues"
+  },
+  "homepage": "https://github.com/fredizzimo/opencode-synthetic-plexus#readme",
   "keywords": [
     "opencode",
     "plugin",
