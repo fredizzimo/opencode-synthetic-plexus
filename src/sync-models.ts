@@ -73,11 +73,7 @@ async function fetchWithAuth(url: string, adminKey: string, options: RequestInit
   return response;
 }
 
-export async function fetchSyntheticModels(): Promise<SyntheticModel[]> {
-  const apiKey = process.env.SYNTHETIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("SYNTHETIC_API_KEY environment variable not set");
-  }
+export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticModel[]> {
   log("Fetching models from Synthetic API...");
   const response = await fetch(SYNTHETIC_API_URL, {
     headers: {
@@ -94,11 +90,7 @@ export async function fetchSyntheticModels(): Promise<SyntheticModel[]> {
   return data.data;
 }
 
-export async function fetchPlexusAliases(plexusUrl: string): Promise<Record<string, PlexusAlias>> {
-  const adminKey = process.env.PLEXUS_ADMIN_KEY;
-  if (!adminKey) {
-    throw new Error("PLEXUS_ADMIN_KEY environment variable not set");
-  }
+export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): Promise<Record<string, PlexusAlias>> {
   log("Fetching current Plexus aliases...");
   const response = await fetchWithAuth(`${plexusUrl}/v0/management/aliases`, adminKey);
   if (!response.ok) {
@@ -109,11 +101,7 @@ export async function fetchPlexusAliases(plexusUrl: string): Promise<Record<stri
   return aliases;
 }
 
-export async function fetchPlexusProvider(plexusUrl: string, providerId: string): Promise<PlexusProvider | null> {
-  const adminKey = process.env.PLEXUS_ADMIN_KEY;
-  if (!adminKey) {
-    throw new Error("PLEXUS_ADMIN_KEY environment variable not set");
-  }
+export async function fetchPlexusProvider(plexusUrl: string, providerId: string, adminKey: string): Promise<PlexusProvider | null> {
   const response = await fetchWithAuth(`${plexusUrl}/v0/management/providers/${encodeURIComponent(providerId)}`, adminKey);
   if (!response.ok) {
     if (response.status === 404) {
@@ -124,11 +112,7 @@ export async function fetchPlexusProvider(plexusUrl: string, providerId: string)
   return (await response.json()) as PlexusProvider;
 }
 
-export async function savePlexusProvider(plexusUrl: string, providerId: string, config: PlexusProvider): Promise<void> {
-  const adminKey = process.env.PLEXUS_ADMIN_KEY;
-  if (!adminKey) {
-    throw new Error("PLEXUS_ADMIN_KEY environment variable not set");
-  }
+export async function savePlexusProvider(plexusUrl: string, providerId: string, config: PlexusProvider, adminKey: string): Promise<void> {
   const response = await fetchWithAuth(
     `${plexusUrl}/v0/management/providers/${encodeURIComponent(providerId)}`,
     adminKey,
@@ -143,11 +127,7 @@ export async function savePlexusProvider(plexusUrl: string, providerId: string, 
   }
 }
 
-export async function savePlexusAlias(plexusUrl: string, aliasId: string, config: PlexusAlias): Promise<void> {
-  const adminKey = process.env.PLEXUS_ADMIN_KEY;
-  if (!adminKey) {
-    throw new Error("PLEXUS_ADMIN_KEY environment variable not set");
-  }
+export async function savePlexusAlias(plexusUrl: string, aliasId: string, config: PlexusAlias, adminKey: string): Promise<void> {
   const response = await fetchWithAuth(
     `${plexusUrl}/v0/management/aliases/${encodeURIComponent(aliasId)}`,
     adminKey,
@@ -167,13 +147,13 @@ export interface SyncResult {
   models: SyntheticModel[];
 }
 
-export async function syncModels(plexusUrl: string): Promise<SyncResult> {
+export async function syncModels(plexusUrl: string, adminKey: string, apiKey: string): Promise<SyncResult> {
   log("Starting model sync...");
-  const syntheticModels = await fetchSyntheticModels();
+  const syntheticModels = await fetchSyntheticModels(apiKey);
 
-  const existingAliases = await fetchPlexusAliases(plexusUrl);
+  const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey);
 
-  const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic");
+  const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic", adminKey);
   const syntheticProvider: PlexusProvider = {
     ...existingProvider,
     api_base_url: existingProvider?.api_base_url || { chat: "https://api.synthetic.new/openai/v1" },
@@ -182,13 +162,13 @@ export async function syncModels(plexusUrl: string): Promise<SyncResult> {
     models: buildSyntheticProviderModels(syntheticModels),
   };
 
-  await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider);
+  await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider, adminKey);
 
   for (const model of syntheticModels) {
     const aliasName = getSimplifiedName(model.id);
     const existingAlias = existingAliases[aliasName];
     const aliasConfig = buildSyntheticAlias(model, existingAlias);
-    await savePlexusAlias(plexusUrl, aliasName, aliasConfig);
+    await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);
   }
 
   log(`Sync completed successfully (${syntheticModels.length} models)`);

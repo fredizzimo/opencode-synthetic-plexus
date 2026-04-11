@@ -96,19 +96,20 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       setSyncVerbose(pluginConfig.verbose ?? false);
       setUpdateVerbose(pluginConfig.verbose ?? false);
 
-      process.env.SYNTHETIC_API_KEY = pluginConfig.syntheticApiKey;
-
       try {
         let models: SyntheticModel[];
         let baseURL: string;
 
         if (pluginConfig.plexusAdminKey) {
-          process.env.PLEXUS_ADMIN_KEY = pluginConfig.plexusAdminKey;
-          const syncResult = await syncModels(pluginConfig.plexusUrl!);
+          const syncResult = await syncModels(
+            pluginConfig.plexusUrl!,
+            pluginConfig.plexusAdminKey,
+            pluginConfig.syntheticApiKey!
+          );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl!}/v1`;
         } else {
-          models = await fetchSyntheticModels();
+          models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
           baseURL = pluginConfig.syntheticApiUrl!;
         }
 
