@@ -12,7 +12,6 @@ interface PluginConfig {
   syntheticApiKey?: string;
   plexusAdminKey?: string;
   modelOptions?: Record<string, Record<string, unknown>>;
-  syncEnabled?: boolean;
   verbose?: boolean;
 }
 
@@ -74,7 +73,6 @@ async function getPluginConfig(directory: string): Promise<PluginConfig> {
     syntheticApiKey: merged.syntheticApiKey,
     plexusAdminKey: merged.plexusAdminKey,
     modelOptions: merged.modelOptions || {},
-    syncEnabled: merged.syncEnabled !== false,
     verbose: merged.verbose ?? false,
   };
 }
@@ -84,10 +82,6 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
     config: async (config) => {
       const cfg = config as Config & { provider?: Record<string, unknown> };
       const pluginConfig = await getPluginConfig(directory);
-
-      if (!pluginConfig.syncEnabled) {
-        return;
-      }
 
       if (!pluginConfig.syntheticApiKey) {
         return;

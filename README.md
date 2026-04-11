@@ -4,7 +4,7 @@ An OpenCode plugin that syncs AI models from the Synthetic API to Plexus (a mode
 
 ## Features
 
-- Syncs models from Synthetic API to Plexus on OpenCode startup (optional)
+- Syncs models from Synthetic API to Plexus on OpenCode startup
 - Dynamically updates OpenCode config with model metadata
 - Can operate without Plexus, using Synthetic API directly
 - Configurable provider name and URLs
@@ -65,7 +65,6 @@ Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
 {
   "providerName": "synthetic",
   "syntheticApiKey": "your-synthetic-api-key",
-  "syncEnabled": true,
   "verbose": false
 }
 ```
@@ -80,7 +79,6 @@ Set `plexusAdminKey` to enable Plexus mode:
   "plexusUrl": "http://localhost:8080",
   "syntheticApiKey": "your-synthetic-api-key",
   "plexusAdminKey": "your-plexus-admin-key",
-  "syncEnabled": true,
   "verbose": false
 }
 ```
@@ -96,7 +94,6 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 | `providerName` | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config |
 | `syntheticApiKey` | string | - | API key for Synthetic API (required) |
 | `plexusAdminKey` | string | - | Admin key for Plexus management API (enables Plexus mode when set) |
-| `syncEnabled` | boolean | `true` | Enable/disable model syncing |
 | `verbose` | boolean | `false` | Enable verbose logging |
 | `modelOptions` | object | `{}` | Custom model config merged with generated config |
 
