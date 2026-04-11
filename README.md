@@ -111,12 +111,6 @@ You can use environment variable substitution in the config file using the `{env
 }
 ```
 
-Environment variables can also be used as fallbacks:
-- `SYNTHETIC_API_KEY` - Falls back if `syntheticApiKey` not set in config
-- `PLEXUS_ADMIN_KEY` - Falls back if `plexusAdminKey` not set in config
-- `PLEXUS_URL` - Falls back if `plexusUrl` not set in config
-- `SYNTHETIC_API_URL` - Falls back if `syntheticApiUrl` not set in config
-
 ### Model Options
 
 You can customize model configuration by providing additional options that will be merged with the auto-generated config:
@@ -154,16 +148,6 @@ See the [OpenCode models documentation](https://opencode.ai/docs/models/) for al
 4. If `plexusAdminKey` is not set (default):
    - It updates OpenCode's in-memory configuration with Synthetic API as the provider URL directly
 
-## Publishing
-
-To publish a new version to npm:
-
-```bash
-npm login
-npm run build
-npm publish
-```
-
 ## Connecting the Provider in OpenCode
 
 After configuring the plugin, you need to connect the provider in OpenCode:
@@ -188,6 +172,17 @@ Plexus requires API keys for authentication. Configure keys through the Admin UI
 3. Add a new key with a secret (e.g., `sk-plexus-my-key`)
 
 Use the `secret` value as the API key when connecting the provider in OpenCode.
+
+## Publishing
+
+To publish a new version to npm:
+
+```bash
+npm login
+npm run build
+npm publish
+```
+
 
 ## License
 

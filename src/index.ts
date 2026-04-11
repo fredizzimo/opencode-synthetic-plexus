@@ -68,11 +68,11 @@ async function getPluginConfig(directory: string): Promise<PluginConfig> {
   };
 
   return {
-    plexusUrl: merged.plexusUrl || process.env.PLEXUS_URL || DEFAULT_PLEXUS_URL,
-    syntheticApiUrl: merged.syntheticApiUrl || process.env.SYNTHETIC_API_URL || DEFAULT_SYNTHETIC_API_URL,
+    plexusUrl: merged.plexusUrl || DEFAULT_PLEXUS_URL,
+    syntheticApiUrl: merged.syntheticApiUrl || DEFAULT_SYNTHETIC_API_URL,
     providerName: merged.providerName || (merged.plexusAdminKey ? "synthetic-plexus" : "synthetic"),
-    syntheticApiKey: merged.syntheticApiKey || process.env.SYNTHETIC_API_KEY,
-    plexusAdminKey: merged.plexusAdminKey || process.env.PLEXUS_ADMIN_KEY,
+    syntheticApiKey: merged.syntheticApiKey,
+    plexusAdminKey: merged.plexusAdminKey,
     modelOptions: merged.modelOptions || {},
     syncEnabled: merged.syncEnabled !== false,
     verbose: merged.verbose ?? false,
