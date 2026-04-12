@@ -1,21 +1,12 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
-import type { SyntheticModel } from "./types.js";
+import type { SyntheticModel, PluginConfig } from "./types.js";
 import { fetchSyntheticModels } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig } from "./update-opencode.js";
+import { validatePluginConfig } from "./validate.js";
 import { setVerbose, error as logError, warn as logWarn } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
-
-interface PluginConfig {
-  plexusUrl?: string;
-  syntheticApiUrl?: string;
-  providerName?: string;
-  syntheticApiKey?: string;
-  plexusAdminKey?: string;
-  modelOptions?: Record<string, Record<string, unknown>>;
-  verbose?: boolean;
-}
 
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
 const DEFAULT_SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1";
@@ -54,9 +45,14 @@ async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
     const configPath = join(directory, CONFIG_FILE_NAME);
     const content = await fs.readFile(configPath, "utf-8");
     const parsed = JSON.parse(content);
-    return processConfigValues(parsed) as PluginConfig;
+    const processed = processConfigValues(parsed);
+    return validatePluginConfig(processed) as PluginConfig;
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+    if (err && typeof err === "object" && "issues" in err) {
+      logError(`Invalid config in ${directory}: ${(err as { issues: unknown[] }).issues.map(String).join(", ")}`);
       return null;
     }
     logError(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);

@@ -1,5 +1,6 @@
 import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
 import { parsePrice } from "./synthetic.js";
+import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import { info } from "./log.js";
 
 function getSimplifiedName(modelId: string): string {
@@ -62,7 +63,8 @@ export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): P
   if (!response.ok) {
     throw new Error(`Failed to fetch Plexus aliases: ${response.status} ${response.statusText}`);
   }
-  const aliases = (await response.json()) as Record<string, PlexusAlias>;
+  const raw = await response.json();
+  const aliases = validatePlexusAliasesResponse(raw);
   info(`Found ${Object.keys(aliases).length} existing aliases`);
   return aliases;
 }
@@ -75,7 +77,8 @@ export async function fetchPlexusProvider(plexusUrl: string, providerId: string,
     }
     throw new Error(`Failed to fetch Plexus provider: ${response.status} ${response.statusText}`);
   }
-  return (await response.json()) as PlexusProvider;
+  const raw = await response.json();
+  return validatePlexusProviderResponse(raw) as PlexusProvider;
 }
 
 export async function savePlexusProvider(plexusUrl: string, providerId: string, config: PlexusProvider, adminKey: string): Promise<void> {

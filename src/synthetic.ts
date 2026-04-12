@@ -1,4 +1,5 @@
 import type { SyntheticModel } from "./types.js";
+import { validateSyntheticApiResponse } from "./validate.js";
 import { info } from "./log.js";
 
 const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
@@ -20,7 +21,8 @@ export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticMod
       `Failed to fetch Synthetic models: ${response.status} ${response.statusText}`
     );
   }
-  const data = (await response.json()) as { data: SyntheticModel[] };
+  const raw = await response.json();
+  const data = validateSyntheticApiResponse(raw);
   info(`Found ${data.data.length} models from Synthetic API`);
   return data.data;
 }

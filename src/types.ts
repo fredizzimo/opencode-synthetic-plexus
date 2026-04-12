@@ -106,6 +106,16 @@ export interface OpenCodeModelConfig {
   [key: string]: unknown;
 }
 
+export interface PluginConfig {
+  plexusUrl?: string;
+  syntheticApiUrl?: string;
+  providerName?: string;
+  syntheticApiKey?: string;
+  plexusAdminKey?: string;
+  modelOptions?: Record<string, Record<string, unknown>>;
+  verbose?: boolean;
+}
+
 export interface SyncResult {
   success: boolean;
   modelsSynced: number;
