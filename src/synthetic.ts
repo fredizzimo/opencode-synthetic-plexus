@@ -5,7 +5,11 @@ import { info } from "./log.js";
 const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
 
 export function parsePrice(priceStr: string): number {
-  const value = parseFloat(priceStr.replace("$", ""));
+  const cleaned = priceStr.replaceAll("$", "").replace(/,/g, "");
+  const value = parseFloat(cleaned);
+  if (Number.isNaN(value)) {
+    throw new Error(`Invalid price string: '${priceStr}'`);
+  }
   return value * 1_000_000;
 }
 

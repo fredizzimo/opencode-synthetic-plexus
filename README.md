@@ -104,7 +104,7 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 
 ### Environment Variables
 
-You can use environment variable substitution in the config file using the `{env:VAR_NAME}` syntax:
+You can use environment variable substitution in config values by placing `{env:VAR_NAME}` inside a quoted string:
 
 ```json
 {

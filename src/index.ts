@@ -12,27 +12,28 @@ const DEFAULT_PLEXUS_URL = "http://localhost:8080";
 const DEFAULT_SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1";
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
-function substituteEnvVars(value: string): string {
+function substituteEnvVars(value: string, missing: Set<string>): string {
   return value.replace(/\{env:([^}]+)\}/g, (_, varName) => {
     const envValue = process.env[varName];
     if (envValue === undefined) {
-      logError(`Environment variable '${varName}' is referenced but not set`);
+      missing.add(varName);
+      return `{env:${varName}}`;
     }
-    return envValue || "";
+    return envValue;
   });
 }
 
-function processConfigValues(obj: unknown): unknown {
+function processConfigValues(obj: unknown, missing: Set<string>): unknown {
   if (typeof obj === "string") {
-    return substituteEnvVars(obj);
+    return substituteEnvVars(obj, missing);
   }
   if (Array.isArray(obj)) {
-    return obj.map(processConfigValues);
+    return obj.map((v) => processConfigValues(v, missing));
   }
   if (obj && typeof obj === "object") {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      result[key] = processConfigValues(value);
+      result[key] = processConfigValues(value, missing);
     }
     return result;
   }
@@ -40,23 +41,36 @@ function processConfigValues(obj: unknown): unknown {
 }
 
 async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
+  let parsed: unknown;
   try {
     const fs = await import("node:fs/promises");
     const configPath = join(directory, CONFIG_FILE_NAME);
     const content = await fs.readFile(configPath, "utf-8");
-    const parsed = JSON.parse(content);
-    const processed = processConfigValues(parsed);
-    return validatePluginConfig(processed) as PluginConfig;
+    parsed = JSON.parse(content);
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
     }
+    logError(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
+    return null;
+  }
+
+  const missing = new Set<string>();
+  const processed = processConfigValues(parsed, missing);
+
+  if (missing.size > 0) {
+    const vars = [...missing].join("', '");
+    throw new Error(`Environment variable(s) not set: '${vars}'`);
+  }
+
+  try {
+    return validatePluginConfig(processed) as PluginConfig;
+  } catch (err) {
     if (err && typeof err === "object" && "issues" in err) {
       logError(`Invalid config in ${directory}: ${(err as { issues: unknown[] }).issues.map(String).join(", ")}`);
       return null;
     }
-    logError(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
-    return null;
+    throw err;
   }
 }
 
@@ -87,7 +101,22 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
   return {
     config: async (config) => {
       const cfg = config as Config & { provider?: Record<string, unknown> };
-      const pluginConfig = await getPluginConfig(directory);
+      let pluginConfig: PluginConfig;
+
+      try {
+        pluginConfig = await getPluginConfig(directory);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logError(`Failed to load plugin config: ${errorMessage}`);
+        await client.app.log({
+          body: {
+            service: "synthetic-plexus",
+            level: "error",
+            message: `Failed to load plugin config: ${errorMessage}`,
+          },
+        });
+        return;
+      }
 
       if (!pluginConfig.syntheticApiKey) {
         logWarn("syntheticApiKey is not configured, skipping model sync");
