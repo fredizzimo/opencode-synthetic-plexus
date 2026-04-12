@@ -1,17 +1,6 @@
 import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
 import { parsePrice } from "./synthetic.js";
-
-let verbose = false;
-
-export function setVerbose(value: boolean): void {
-  verbose = value;
-}
-
-function log(message: string): void {
-  if (verbose) {
-    console.log(`[synthetic-plexus] ${message}`);
-  }
-}
+import { log } from "./log.js";
 
 function getSimplifiedName(modelId: string): string {
   const parts = modelId.split("/");

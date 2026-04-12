@@ -1,8 +1,9 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
 import type { SyntheticModel } from "./types.js";
-import { fetchSyntheticModels, setVerbose as setSyntheticVerbose } from "./synthetic.js";
-import { syncPlexusModels, setVerbose as setPlexusVerbose } from "./plexus.js";
-import { updateOpenCodeConfig, setVerbose as setUpdateVerbose } from "./update-opencode.js";
+import { fetchSyntheticModels } from "./synthetic.js";
+import { syncPlexusModels } from "./plexus.js";
+import { updateOpenCodeConfig } from "./update-opencode.js";
+import { setVerbose } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -88,9 +89,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
         return;
       }
 
-      setSyntheticVerbose(pluginConfig.verbose ?? false);
-      setPlexusVerbose(pluginConfig.verbose ?? false);
-      setUpdateVerbose(pluginConfig.verbose ?? false);
+      setVerbose(pluginConfig.verbose ?? false);
 
       try {
         let models: SyntheticModel[];

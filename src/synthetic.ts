@@ -1,18 +1,7 @@
 import type { SyntheticModel } from "./types.js";
+import { log } from "./log.js";
 
 const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
-
-let verbose = false;
-
-export function setVerbose(value: boolean): void {
-  verbose = value;
-}
-
-function log(message: string): void {
-  if (verbose) {
-    console.log(`[synthetic-plexus] ${message}`);
-  }
-}
 
 export function parsePrice(priceStr: string): number {
   const value = parseFloat(priceStr.replace("$", ""));
