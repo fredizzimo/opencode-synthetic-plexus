@@ -126,6 +126,51 @@ export interface SyncResult {
   models: SyntheticModel[];
 }
 
+const ALIAS_CONCURRENCY = 5;
+
+async function allSettledWithConcurrency<T>(
+  items: T[],
+  fn: (item: T) => Promise<void>,
+  concurrency: number
+): Promise<PromiseSettledResult<void>[]> {
+  const results: PromiseSettledResult<void>[] = [];
+  let running = 0;
+  let index = 0;
+  let resolveWait: (() => void) | null = null;
+
+  function tryNext() {
+    while (running < concurrency && index < items.length) {
+      const i = index++;
+      running++;
+      fn(items[i])
+        .then(
+          () => { results[i] = { status: "fulfilled", value: undefined }; },
+          (err: unknown) => { results[i] = { status: "rejected", reason: err }; }
+        )
+        .finally(() => {
+          running--;
+          if (resolveWait) {
+            resolveWait();
+            resolveWait = null;
+          }
+        });
+    }
+    if (index >= items.length && running === 0 && resolveWait) {
+      resolveWait();
+      resolveWait = null;
+    }
+  }
+
+  while (index < items.length || running > 0) {
+    tryNext();
+    if (running > 0 && (running >= concurrency || index >= items.length)) {
+      await new Promise<void>((r) => { resolveWait = r; });
+    }
+  }
+
+  return results;
+}
+
 export async function syncPlexusModels(plexusUrl: string, adminKey: string, syntheticModels: SyntheticModel[]): Promise<SyncResult> {
   info("Starting model sync...");
 
@@ -142,13 +187,26 @@ export async function syncPlexusModels(plexusUrl: string, adminKey: string, synt
 
   await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider, adminKey);
 
-  for (const model of syntheticModels) {
-    const aliasName = getSimplifiedName(model.id);
-    const existingAlias = existingAliases[aliasName];
-    const aliasConfig = buildSyntheticAlias(model, existingAlias);
-    await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);
+  const results = await allSettledWithConcurrency(
+    syntheticModels,
+    async (model) => {
+      const aliasName = getSimplifiedName(model.id);
+      const existingAlias = existingAliases[aliasName];
+      const aliasConfig = buildSyntheticAlias(model, existingAlias);
+      await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);
+    },
+    ALIAS_CONCURRENCY
+  );
+
+  const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+  if (failures.length > 0) {
+    for (const f of failures) {
+      info(`Warning: alias save failed: ${f.reason}`);
+    }
+    info(`Sync completed with ${failures.length} alias save failure(s) out of ${syntheticModels.length} models`);
+  } else {
+    info(`Sync completed successfully (${syntheticModels.length} models)`);
   }
 
-  info(`Sync completed successfully (${syntheticModels.length} models)`);
   return { count: syntheticModels.length, models: syntheticModels };
 }
