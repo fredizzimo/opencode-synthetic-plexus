@@ -1,7 +1,8 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
 import type { SyntheticModel } from "./types.js";
-import { syncModels, fetchSyntheticModels, setVerbose as setSyncVerbose } from "./sync-models.js";
-import { updateOpenCodeConfig, setVerbose as setUpdateVerbose } from "./update-models.js";
+import { fetchSyntheticModels, setVerbose as setSyntheticVerbose } from "./synthetic.js";
+import { syncPlexusModels, setVerbose as setPlexusVerbose } from "./plexus.js";
+import { updateOpenCodeConfig, setVerbose as setUpdateVerbose } from "./update-opencode.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -87,7 +88,8 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
         return;
       }
 
-      setSyncVerbose(pluginConfig.verbose ?? false);
+      setSyntheticVerbose(pluginConfig.verbose ?? false);
+      setPlexusVerbose(pluginConfig.verbose ?? false);
       setUpdateVerbose(pluginConfig.verbose ?? false);
 
       try {
@@ -95,10 +97,11 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
         let baseURL: string;
 
         if (pluginConfig.plexusAdminKey) {
-          const syncResult = await syncModels(
+          const syntheticModels = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
+          const syncResult = await syncPlexusModels(
             pluginConfig.plexusUrl!,
             pluginConfig.plexusAdminKey,
-            pluginConfig.syntheticApiKey!
+            syntheticModels
           );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl!}/v1`;

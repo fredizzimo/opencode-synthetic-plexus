@@ -1,6 +1,5 @@
-import type { SyntheticModel, PlexusAlias, PlexusTarget, PlexusProvider } from "./types.js";
-
-const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
+import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
+import { parsePrice } from "./synthetic.js";
 
 let verbose = false;
 
@@ -12,11 +11,6 @@ function log(message: string): void {
   if (verbose) {
     console.log(`[synthetic-plexus] ${message}`);
   }
-}
-
-function parsePrice(priceStr: string): number {
-  const value = parseFloat(priceStr.replace("$", ""));
-  return value * 1_000_000;
 }
 
 function getSimplifiedName(modelId: string): string {
@@ -71,23 +65,6 @@ async function fetchWithAuth(url: string, adminKey: string, options: RequestInit
     },
   });
   return response;
-}
-
-export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticModel[]> {
-  log("Fetching models from Synthetic API...");
-  const response = await fetch(SYNTHETIC_API_URL, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-    },
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch Synthetic models: ${response.status} ${response.statusText}`
-    );
-  }
-  const data = (await response.json()) as { data: SyntheticModel[] };
-  log(`Found ${data.data.length} models from Synthetic API`);
-  return data.data;
 }
 
 export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): Promise<Record<string, PlexusAlias>> {
@@ -147,9 +124,8 @@ export interface SyncResult {
   models: SyntheticModel[];
 }
 
-export async function syncModels(plexusUrl: string, adminKey: string, apiKey: string): Promise<SyncResult> {
+export async function syncPlexusModels(plexusUrl: string, adminKey: string, syntheticModels: SyntheticModel[]): Promise<SyncResult> {
   log("Starting model sync...");
-  const syntheticModels = await fetchSyntheticModels(apiKey);
 
   const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey);
 

@@ -1,4 +1,5 @@
 import type { OpenCodeModelConfig, SyntheticModel } from "./types.js";
+import { parsePrice } from "./synthetic.js";
 
 let verbose = false;
 
@@ -10,11 +11,6 @@ function log(message: string): void {
   if (verbose) {
     console.log(`[synthetic-plexus] ${message}`);
   }
-}
-
-function parsePrice(priceStr: string): number {
-  const value = parseFloat(priceStr.replace("$", ""));
-  return value * 1_000_000;
 }
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
