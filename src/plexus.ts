@@ -1,5 +1,5 @@
 import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
-import { parsePrice } from "./synthetic.js";
+import { parsePrice, FETCH_TIMEOUT_MS } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import { info } from "./log.js";
 
@@ -46,15 +46,25 @@ function buildSyntheticAlias(model: SyntheticModel, existingAlias?: PlexusAlias)
 }
 
 async function fetchWithAuth(url: string, adminKey: string, options: RequestInit = {}): Promise<Response> {
-  const response = await fetch(url, {
-    ...options,
-    headers: {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = {
       "x-admin-key": adminKey,
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
-  return response;
+      ...options.headers as Record<string, string>,
+    };
+    if (options.body) {
+      headers["Content-Type"] = "application/json";
+    }
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): Promise<Record<string, PlexusAlias>> {
