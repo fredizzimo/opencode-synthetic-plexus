@@ -113,6 +113,8 @@ You can use environment variable substitution in config values by placing `{env:
 }
 ```
 
+> **Security:** Avoid storing plaintext API keys in config files. Use the `{env:...}` syntax to reference environment variables instead.
+
 ### Model Options
 
 You can customize model configuration and define variants by providing options that will be merged with the auto-generated config:
