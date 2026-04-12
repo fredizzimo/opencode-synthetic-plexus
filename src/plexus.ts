@@ -117,6 +117,18 @@ export async function savePlexusAlias(plexusUrl: string, aliasId: string, config
   }
 }
 
+async function deletePlexusAlias(plexusUrl: string, aliasId: string, adminKey: string): Promise<void> {
+  const response = await fetchWithAuth(
+    `${plexusUrl}/v0/management/aliases/${encodeURIComponent(aliasId)}`,
+    adminKey,
+    { method: "DELETE" }
+  );
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to delete alias '${aliasId}': ${response.status} ${response.statusText}\n${errorText}`);
+  }
+}
+
 export interface SyncResult {
   count: number;
   models: SyntheticModel[];
@@ -204,6 +216,49 @@ export async function syncPlexusModels(plexusUrl: string, adminKey: string, synt
     info(`Sync completed with ${failures.length} alias save failure(s) out of ${syntheticModels.length} models`);
   } else {
     info(`Sync completed successfully (${syntheticModels.length} models)`);
+  }
+
+  const currentModelIds = new Set(syntheticModels.map(m => m.id));
+  const savedAliasNames = new Set(aliasMap.values());
+  const aliasesToDelete: string[] = [];
+  const aliasesToUpdate: { name: string; config: PlexusAlias }[] = [];
+
+  for (const [aliasName, alias] of Object.entries(existingAliases)) {
+    if (savedAliasNames.has(aliasName)) continue;
+    const staleTargets = alias.targets.filter(t => t.provider === "synthetic" && !currentModelIds.has(t.model));
+    if (staleTargets.length === 0) continue;
+    const remainingTargets = alias.targets.filter(t => !(t.provider === "synthetic" && !currentModelIds.has(t.model)));
+    if (remainingTargets.length === 0) {
+      aliasesToDelete.push(aliasName);
+    } else {
+      aliasesToUpdate.push({ name: aliasName, config: { ...alias, targets: remainingTargets } });
+    }
+  }
+
+  const cleanupItems: { name: string; action: "delete" | "update"; config?: PlexusAlias }[] = [
+    ...aliasesToDelete.map(name => ({ name, action: "delete" as const })),
+    ...aliasesToUpdate.map(({ name, config }) => ({ name, action: "update" as const, config })),
+  ];
+
+  if (cleanupItems.length > 0) {
+    info(`Cleaning up ${cleanupItems.length} stale alias(es) (${aliasesToDelete.length} delete, ${aliasesToUpdate.length} update)...`);
+    const cleanupResults = await allSettledWithConcurrency(
+      cleanupItems,
+      async (item) => {
+        if (item.action === "delete") {
+          await deletePlexusAlias(plexusUrl, item.name, adminKey);
+          info(`Deleted stale alias '${item.name}'`);
+        } else {
+          await savePlexusAlias(plexusUrl, item.name, item.config!, adminKey);
+          info(`Removed stale Synthetic target(s) from alias '${item.name}'`);
+        }
+      },
+      ALIAS_CONCURRENCY
+    );
+    const cleanupFailures = cleanupResults.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+    for (const f of cleanupFailures) {
+      info(`Warning: stale alias cleanup failed: ${f.reason}`);
+    }
   }
 
   return { count: syntheticModels.length, models: syntheticModels };
