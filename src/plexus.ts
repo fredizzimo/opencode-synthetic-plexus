@@ -1,12 +1,8 @@
 import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
-import { parsePrice, FETCH_TIMEOUT_MS } from "./synthetic.js";
+import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import { info } from "./log.js";
 
-function getSimplifiedName(modelId: string): string {
-  const parts = modelId.split("/");
-  return parts[parts.length - 1];
-}
 
 function buildSyntheticProviderModels(
   models: SyntheticModel[]
@@ -187,10 +183,12 @@ export async function syncPlexusModels(plexusUrl: string, adminKey: string, synt
 
   await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider, adminKey);
 
+  const aliasMap = buildModelAliases(syntheticModels.map(m => m.id));
+
   const results = await allSettledWithConcurrency(
     syntheticModels,
     async (model) => {
-      const aliasName = getSimplifiedName(model.id);
+      const aliasName = aliasMap.get(model.id)!;
       const existingAlias = existingAliases[aliasName];
       const aliasConfig = buildSyntheticAlias(model, existingAlias);
       await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);

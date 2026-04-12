@@ -1,5 +1,5 @@
 import type { OpenCodeModelConfig, SyntheticModel } from "./types.js";
-import { parsePrice } from "./synthetic.js";
+import { parsePrice, buildModelAliases } from "./synthetic.js";
 import { info } from "./log.js";
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
@@ -79,8 +79,10 @@ export function buildProviderConfig(
 } {
   const modelsConfig: Record<string, OpenCodeModelConfig> = {};
 
+  const aliasMap = buildModelAliases(models.map(m => m.id));
+
   for (const model of models) {
-    const aliasName = model.id.split("/").pop() || model.id;
+    const aliasName = aliasMap.get(model.id)!;
     modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions?.[aliasName]);
   }
 
