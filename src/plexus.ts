@@ -1,6 +1,6 @@
 import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
 import { parsePrice } from "./synthetic.js";
-import { log } from "./log.js";
+import { info } from "./log.js";
 
 function getSimplifiedName(modelId: string): string {
   const parts = modelId.split("/");
@@ -57,13 +57,13 @@ async function fetchWithAuth(url: string, adminKey: string, options: RequestInit
 }
 
 export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): Promise<Record<string, PlexusAlias>> {
-  log("Fetching current Plexus aliases...");
+  info("Fetching current Plexus aliases...");
   const response = await fetchWithAuth(`${plexusUrl}/v0/management/aliases`, adminKey);
   if (!response.ok) {
     throw new Error(`Failed to fetch Plexus aliases: ${response.status} ${response.statusText}`);
   }
   const aliases = (await response.json()) as Record<string, PlexusAlias>;
-  log(`Found ${Object.keys(aliases).length} existing aliases`);
+  info(`Found ${Object.keys(aliases).length} existing aliases`);
   return aliases;
 }
 
@@ -114,7 +114,7 @@ export interface SyncResult {
 }
 
 export async function syncPlexusModels(plexusUrl: string, adminKey: string, syntheticModels: SyntheticModel[]): Promise<SyncResult> {
-  log("Starting model sync...");
+  info("Starting model sync...");
 
   const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey);
 
@@ -136,6 +136,6 @@ export async function syncPlexusModels(plexusUrl: string, adminKey: string, synt
     await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);
   }
 
-  log(`Sync completed successfully (${syntheticModels.length} models)`);
+  info(`Sync completed successfully (${syntheticModels.length} models)`);
   return { count: syntheticModels.length, models: syntheticModels };
 }

@@ -1,6 +1,6 @@
 import type { OpenCodeModelConfig, SyntheticModel } from "./types.js";
 import { parsePrice } from "./synthetic.js";
-import { log } from "./log.js";
+import { info } from "./log.js";
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
   const result = { ...target };
@@ -105,6 +105,6 @@ export function updateOpenCodeConfig(
   provider[providerName] = providerConfig as unknown;
   config.provider = provider;
 
-  log(`Updated config with ${models.length} models`);
+  info(`Updated config with ${models.length} models`);
   return config;
 }

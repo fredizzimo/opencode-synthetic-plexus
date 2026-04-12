@@ -1,5 +1,5 @@
 import type { SyntheticModel } from "./types.js";
-import { log } from "./log.js";
+import { info } from "./log.js";
 
 const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
 
@@ -9,7 +9,7 @@ export function parsePrice(priceStr: string): number {
 }
 
 export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticModel[]> {
-  log("Fetching models from Synthetic API...");
+  info("Fetching models from Synthetic API...");
   const response = await fetch(SYNTHETIC_API_URL, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -21,6 +21,6 @@ export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticMod
     );
   }
   const data = (await response.json()) as { data: SyntheticModel[] };
-  log(`Found ${data.data.length} models from Synthetic API`);
+  info(`Found ${data.data.length} models from Synthetic API`);
   return data.data;
 }

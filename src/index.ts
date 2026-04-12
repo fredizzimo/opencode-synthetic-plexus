@@ -3,7 +3,7 @@ import type { SyntheticModel } from "./types.js";
 import { fetchSyntheticModels } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig } from "./update-opencode.js";
-import { setVerbose } from "./log.js";
+import { setVerbose, error as logError, warn as logWarn } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -23,7 +23,11 @@ const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
 function substituteEnvVars(value: string): string {
   return value.replace(/\{env:([^}]+)\}/g, (_, varName) => {
-    return process.env[varName] || "";
+    const envValue = process.env[varName];
+    if (envValue === undefined) {
+      logError(`Environment variable '${varName}' is referenced but not set`);
+    }
+    return envValue || "";
   });
 }
 
@@ -51,7 +55,11 @@ async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
     const content = await fs.readFile(configPath, "utf-8");
     const parsed = JSON.parse(content);
     return processConfigValues(parsed) as PluginConfig;
-  } catch {
+  } catch (err) {
+    if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+    logError(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
@@ -86,6 +94,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       const pluginConfig = await getPluginConfig(directory);
 
       if (!pluginConfig.syntheticApiKey) {
+        logWarn("syntheticApiKey is not configured, skipping model sync");
         return;
       }
 
@@ -117,16 +126,16 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
           pluginConfig.modelOptions
         );
       } catch (error) {
-        if (pluginConfig.verbose) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          await client.app.log({
-            body: {
-              service: "synthetic-plexus",
-              level: "error",
-              message: `Failed to sync models: ${errorMessage}`,
-            },
-          });
-        }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const stackTrace = pluginConfig.verbose && error instanceof Error && error.stack ? `\n${error.stack}` : "";
+        logError(`Failed to sync models: ${errorMessage}${stackTrace}`);
+        await client.app.log({
+          body: {
+            service: "synthetic-plexus",
+            level: "error",
+            message: `Failed to sync models: ${errorMessage}${stackTrace}`,
+          },
+        });
       }
     },
   };
