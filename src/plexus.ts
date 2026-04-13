@@ -1,4 +1,4 @@
-import type { PlexusAlias, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
+import type { PlexusAlias, PlexusModelConfig, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
 import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import { info } from "./log.js";
@@ -6,8 +6,8 @@ import { info } from "./log.js";
 
 function buildSyntheticProviderModels(
   models: SyntheticModel[]
-): Record<string, { pricing: { source: string; input: number; output: number; cached?: number }; access_via: string[] }> {
-  const result: Record<string, { pricing: { source: string; input: number; output: number; cached?: number }; access_via: string[] }> = {};
+): Record<string, PlexusModelConfig> {
+  const result: Record<string, PlexusModelConfig> = {};
   for (const model of models) {
     const cached = model.pricing.input_cache_reads ? parsePrice(model.pricing.input_cache_reads) : undefined;
     result[model.id] = {

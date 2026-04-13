@@ -30,6 +30,7 @@ export interface PlexusPricing {
   source: string;
   input: number;
   output: number;
+  cached?: number;
 }
 
 export interface PlexusModelConfig {
@@ -59,14 +60,12 @@ export interface PlexusProvider {
   enabled?: boolean;
   disable_cooldown?: boolean;
   models?: Record<string, PlexusModelConfig>;
-  [key: string]: unknown;
 }
 
 export interface PlexusConfig {
   providers: Record<string, PlexusProvider>;
   models: Record<string, PlexusAlias>;
   keys?: Record<string, unknown>;
-  [key: string]: unknown;
 }
 
 export interface PlexusModelData {
@@ -142,8 +141,16 @@ export interface PluginConfig {
   verbose?: boolean;
 }
 
-export interface SyncResult {
-  success: boolean;
-  modelsSynced: number;
-  error?: string;
+export interface ResolvedPluginConfig {
+  plexusUrl: string;
+  syntheticApiUrl: string;
+  providerName: string;
+  syntheticApiKey?: string;
+  plexusAdminKey?: string;
+  modelOptions: Record<string, Record<string, unknown>>;
+  verbose: boolean;
+}
+
+export interface OpenCodeAppConfig {
+  provider?: Record<string, unknown>;
 }

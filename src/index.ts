@@ -1,5 +1,5 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
-import type { SyntheticModel, PluginConfig } from "./types.js";
+import type { SyntheticModel, PluginConfig, ResolvedPluginConfig, OpenCodeAppConfig } from "./types.js";
 import { fetchSyntheticModels } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig } from "./update-opencode.js";
@@ -74,7 +74,7 @@ async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
   }
 }
 
-async function getPluginConfig(directory: string): Promise<PluginConfig> {
+async function getPluginConfig(directory: string): Promise<ResolvedPluginConfig> {
   const globalConfigDir = join(homedir(), ".config", "opencode");
   const projectConfigDir = join(directory, ".opencode");
 
@@ -100,8 +100,8 @@ async function getPluginConfig(directory: string): Promise<PluginConfig> {
 export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
   return {
     config: async (config) => {
-      const cfg = config as Config & { provider?: Record<string, unknown> };
-      let pluginConfig: PluginConfig;
+      const cfg = config as Config & OpenCodeAppConfig;
+      let pluginConfig: ResolvedPluginConfig;
 
       try {
         pluginConfig = await getPluginConfig(directory);
@@ -132,22 +132,22 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
         if (pluginConfig.plexusAdminKey) {
           const syntheticModels = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
           const syncResult = await syncPlexusModels(
-            pluginConfig.plexusUrl!,
+            pluginConfig.plexusUrl,
             pluginConfig.plexusAdminKey,
             syntheticModels
           );
           models = syncResult.models;
-          baseURL = `${pluginConfig.plexusUrl!}/v1`;
+          baseURL = `${pluginConfig.plexusUrl}/v1`;
         } else {
           models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
-          baseURL = pluginConfig.syntheticApiUrl!;
+          baseURL = pluginConfig.syntheticApiUrl;
         }
 
         updateOpenCodeConfig(
-          cfg as unknown as Record<string, unknown>,
+          cfg,
           models,
           baseURL,
-          pluginConfig.providerName!,
+          pluginConfig.providerName,
           pluginConfig.modelOptions
         );
       } catch (error) {

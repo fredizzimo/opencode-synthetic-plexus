@@ -1,4 +1,4 @@
-import type { OpenCodeModelConfig, SyntheticModel } from "./types.js";
+import type { OpenCodeAppConfig, OpenCodeModelConfig, SyntheticModel } from "./types.js";
 import { parsePrice, buildModelAliases } from "./synthetic.js";
 import { info } from "./log.js";
 
@@ -90,15 +90,15 @@ export function buildProviderConfig(
 }
 
 export function updateOpenCodeConfig(
-  config: Record<string, unknown>,
+  config: OpenCodeAppConfig,
   models: SyntheticModel[],
   baseURL: string,
   providerName: string,
   modelOptions?: Record<string, Record<string, unknown>>
-): Record<string, unknown> {
+): OpenCodeAppConfig {
   const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions);
 
-  const provider = (config.provider as Record<string, unknown>) || {};
+  const provider = config.provider || {};
   provider[providerName] = providerConfig as unknown;
   config.provider = provider;
 
