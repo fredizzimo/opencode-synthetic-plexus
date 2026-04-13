@@ -202,6 +202,7 @@ export async function syncPlexusModels(
   adminKey: string,
   syntheticModels: SyntheticModel[],
   logger: Logger,
+  syntheticApiKey?: string,
 ): Promise<SyncResult> {
   logger.info("Starting model sync...");
 
@@ -213,6 +214,7 @@ export async function syncPlexusModels(
     api_base_url: existingProvider?.api_base_url || { chat: SYNTHETIC_API_BASE_URL },
     display_name: existingProvider?.display_name || "Synthetic",
     enabled: existingProvider?.enabled !== false,
+    api_key: existingProvider?.api_key || syntheticApiKey,
     models: buildSyntheticProviderModels(syntheticModels),
   };
 
