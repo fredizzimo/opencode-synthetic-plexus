@@ -1,5 +1,5 @@
 {
-  "name": "opencode-synthetic-plexus",
+  "name": "@fredizzimo/opencode-synthetic-plexus",
   "version": "1.0.0",
   "description": "OpenCode plugin that syncs AI models from Synthetic to OpenCode, with optional Plexus integration",
   "type": "module",
