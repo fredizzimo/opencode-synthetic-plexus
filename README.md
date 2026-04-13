@@ -87,7 +87,20 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 | `providerName`    | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config                           |
 | `syntheticApiKey` | string | -                                               | API key for Synthetic API (required)                               |
 | `plexusAdminKey`  | string | -                                               | Admin key for Plexus management API (enables Plexus mode when set) |
+| `cacheDiscount`   | number | `80`                                            | Cache read discount percentage (0–100) applied to the API price    |
 | `modelOptions`    | object | `{}`                                            | Custom model config merged with generated config                   |
+
+### Cache Discount
+
+The Synthetic API returns the full (non-discounted) cache read price. Synthetic plans include an **80% discount** on cache reads, so the plugin applies this discount by default. The `cacheDiscount` setting controls what percentage is subtracted from the API's listed cache read price.
+
+> **Usage Based Billing:** If you are on a Usage Based Billing plan, there is no cache discount. Set `cacheDiscount` to `0` to use the full API price:
+>
+> ```json
+> {
+>   "cacheDiscount": 0
+> }
+> ```
 
 ### Environment Variables
 

@@ -107,12 +107,57 @@ describe("convertSyntheticModelToOpenCode", () => {
     expect(result.cost?.cache_write).toBe(5_000);
   });
 
-  it("omits cache_read and cache_write when not in pricing", () => {
+  it("omits cache_write when not in pricing", () => {
     const result = convertSyntheticModelToOpenCode(makeModel());
-    expect(result.cost?.cache_read).toBeUndefined();
     expect(result.cost?.cache_write).toBeUndefined();
   });
 
+  it("applies cache discount to cache_read", () => {
+    const result = convertSyntheticModelToOpenCode(
+      makeModel({ pricing: { prompt: "$0.01", completion: "$0.02", input_cache_reads: "$0.001" } }),
+      undefined,
+      80,
+    );
+    expect(result.cost?.cache_read).toBeCloseTo(200);
+  });
+
+  it("omits cache_read when input_cache_reads is absent and cacheDiscount > 0", () => {
+    const result = convertSyntheticModelToOpenCode(makeModel(), undefined, 80);
+    expect(result.cost?.cache_read).toBeUndefined();
+  });
+
+  it("omits cache_read when input_cache_reads is absent and cacheDiscount is 0", () => {
+    const result = convertSyntheticModelToOpenCode(makeModel(), undefined, 0);
+    expect(result.cost?.cache_read).toBeUndefined();
+  });
+
+  it("does not apply cache discount when cacheDiscount is 0", () => {
+    const result = convertSyntheticModelToOpenCode(
+      makeModel({ pricing: { prompt: "$0.01", completion: "$0.02", input_cache_reads: "$0.001" } }),
+      undefined,
+      0,
+    );
+    expect(result.cost?.cache_read).toBe(1_000);
+  });
+
+  it("preserves float precision when applying cache discount to small prices", () => {
+    const result = convertSyntheticModelToOpenCode(
+      makeModel({ pricing: { prompt: "$0.000001", completion: "$0.000003", input_cache_reads: "$0.000001" } }),
+      undefined,
+      80,
+    );
+    expect(result.cost?.cache_read).toBeCloseTo(0.2, 5);
+  });
+
+  it("applies cache discount with user config via deepMerge", () => {
+    const result = convertSyntheticModelToOpenCode(
+      makeModel({ pricing: { prompt: "$0.01", completion: "$0.02", input_cache_reads: "$0.001" } }),
+      { reasoning: true },
+      80,
+    );
+    expect(result.cost?.cache_read).toBeCloseTo(200);
+    expect(result.reasoning).toBe(true);
+  });
   it("applies user config via deepMerge", () => {
     const result = convertSyntheticModelToOpenCode(makeModel(), { reasoning: true, temperature: false });
     expect(result.reasoning).toBe(true);

@@ -94,4 +94,28 @@ describe("buildProviderConfig", () => {
     const result = buildProviderConfig(models, "http://localhost:8080/v1", "test", undefined);
     expect(result.models["test-model"]).toBeDefined();
   });
+
+  it("applies cache discount to cache_read pricing", () => {
+    const models = [makeModel({ pricing: { prompt: "$0.01", completion: "$0.02", input_cache_reads: "$0.001" } })];
+    const result = buildProviderConfig(models, "http://localhost:8080/v1", "test", undefined, 80);
+    expect(result.models["test-model"].cost?.cache_read).toBeCloseTo(200);
+  });
+
+  it("omits cache_read when input_cache_reads is absent and cacheDiscount > 0", () => {
+    const models = [makeModel()];
+    const result = buildProviderConfig(models, "http://localhost:8080/v1", "test", undefined, 80);
+    expect(result.models["test-model"].cost?.cache_read).toBeUndefined();
+  });
+
+  it("omits cache_read when input_cache_reads is absent and cacheDiscount is 0", () => {
+    const models = [makeModel()];
+    const result = buildProviderConfig(models, "http://localhost:8080/v1", "test", undefined, 0);
+    expect(result.models["test-model"].cost?.cache_read).toBeUndefined();
+  });
+
+  it("does not apply cache discount when cacheDiscount is 0", () => {
+    const models = [makeModel({ pricing: { prompt: "$0.01", completion: "$0.02", input_cache_reads: "$0.001" } })];
+    const result = buildProviderConfig(models, "http://localhost:8080/v1", "test", undefined, 0);
+    expect(result.models["test-model"].cost?.cache_read).toBe(1_000);
+  });
 });

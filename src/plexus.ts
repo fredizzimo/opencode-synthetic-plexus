@@ -10,10 +10,15 @@ import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases, SYNTHETIC_API_BASE_URL
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import type { Logger } from "./log.js";
 
-function buildSyntheticProviderModels(models: SyntheticModel[]): Record<string, PlexusModelConfig> {
+function buildSyntheticProviderModels(
+  models: SyntheticModel[],
+  cacheDiscount: number = 0,
+): Record<string, PlexusModelConfig> {
   const result: Record<string, PlexusModelConfig> = {};
   for (const model of models) {
-    const cached = model.pricing.input_cache_reads ? parsePrice(model.pricing.input_cache_reads) : undefined;
+    const cached = model.pricing.input_cache_reads
+      ? parsePrice(model.pricing.input_cache_reads) * (1 - cacheDiscount / 100)
+      : undefined;
     result[model.id] = {
       pricing: {
         source: "simple",
@@ -210,6 +215,7 @@ export async function syncPlexusModels(
   syntheticModels: SyntheticModel[],
   logger: Logger,
   syntheticApiKey?: string,
+  cacheDiscount: number = 0,
 ): Promise<SyncResult> {
   logger.info("Starting model sync...");
 
@@ -228,7 +234,7 @@ export async function syncPlexusModels(
     display_name: existingProvider?.display_name || "Synthetic",
     enabled: existingProvider?.enabled !== false,
     api_key: existingProvider?.api_key || syntheticApiKey,
-    models: buildSyntheticProviderModels(syntheticModels),
+    models: buildSyntheticProviderModels(syntheticModels, cacheDiscount),
     quota_checker: existingProvider?.quota_checker ?? defaultQuotaChecker,
   };
 
