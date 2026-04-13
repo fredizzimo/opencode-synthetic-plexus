@@ -40,6 +40,10 @@
   ],
   "author": "Fred Sundvik",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "engines": {
     "node": ">=20.0.0"
   },
