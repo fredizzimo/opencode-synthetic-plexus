@@ -183,15 +183,34 @@ After configuring the plugin, connect the provider in OpenCode:
    - **Direct Synthetic**: Use the same Synthetic API key from your config
    - **Plexus**: Create an API key through the Plexus dashboard (Keys section) and use its secret
 
-## Publishing
+## Releasing & Publishing
 
-To publish a new version to npm:
+Releases are automated via GitHub Actions. Pushing a `v*` tag triggers the release workflow, which runs checks, creates a GitHub Release, and publishes to npm.
 
-```bash
-npm login
-npm run build
-npm publish
-```
+### Creating a release
+
+1. Bump the version in `package.json`
+2. Commit and tag:
+   ```bash
+   git add package.json
+   git commit -m "Release v1.2.3"
+   git tag v1.2.3
+   git push origin master --tags
+   ```
+3. The CI workflow will run checks, create a GitHub Release with auto-generated notes, and publish the package to npm.
+
+### Re-publishing if npm publish fails
+
+If the tag push succeeded but npm publishing failed, you can re-run just the publish step:
+
+1. Go to **Actions** → **Release** workflow in GitHub
+2. Click **Run workflow**
+3. Enter the version number (e.g. `1.2.3`)
+4. This checks out the corresponding tag and re-attempts the publish, skipping the GitHub Release step since it already exists.
+
+### Required secrets
+
+- `NPM_TOKEN` — Add in GitHub repo settings under **Settings → Secrets → Actions**
 
 ## License
 
