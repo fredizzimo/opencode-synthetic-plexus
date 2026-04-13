@@ -53,6 +53,13 @@ export interface PlexusAlias {
   metadata?: Record<string, unknown>;
 }
 
+export interface QuotaChecker {
+  type: string;
+  enabled: boolean;
+  intervalMinutes?: number;
+  options?: Record<string, unknown>;
+}
+
 export interface PlexusProvider {
   api_base_url?: { chat: string };
   display_name?: string;
@@ -60,6 +67,7 @@ export interface PlexusProvider {
   enabled?: boolean;
   disable_cooldown?: boolean;
   models?: Record<string, PlexusModelConfig>;
+  quota_checker?: QuotaChecker;
 }
 
 export interface OpenCodeModelConfig {

@@ -1,4 +1,11 @@
-import type { PlexusAlias, PlexusModelConfig, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
+import type {
+  PlexusAlias,
+  PlexusModelConfig,
+  PlexusTarget,
+  PlexusProvider,
+  QuotaChecker,
+  SyntheticModel,
+} from "./types.js";
 import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import type { Logger } from "./log.js";
@@ -209,6 +216,12 @@ export async function syncPlexusModels(
   const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey, logger);
 
   const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic", adminKey);
+  const defaultQuotaChecker: QuotaChecker = {
+    type: "synthetic",
+    enabled: true,
+    intervalMinutes: 5,
+    options: {},
+  };
   const syntheticProvider: PlexusProvider = {
     ...existingProvider,
     api_base_url: existingProvider?.api_base_url || { chat: SYNTHETIC_API_BASE_URL },
@@ -216,6 +229,7 @@ export async function syncPlexusModels(
     enabled: existingProvider?.enabled !== false,
     api_key: existingProvider?.api_key || syntheticApiKey,
     models: buildSyntheticProviderModels(syntheticModels),
+    quota_checker: existingProvider?.quota_checker ?? defaultQuotaChecker,
   };
 
   await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider, adminKey);
