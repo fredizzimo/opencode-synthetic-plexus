@@ -4,6 +4,7 @@ import { fetchSyntheticModels, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig, deepMerge } from "./update-opencode.js";
 import { validatePluginConfig } from "./validate.js";
+import { ZodError } from "zod";
 import { Logger } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -59,7 +60,11 @@ async function loadConfigFile(directory: string, logger: Logger): Promise<Plugin
     if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
     }
-    logger.error(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
+    if (err instanceof SyntaxError) {
+      logger.error(`Invalid JSON in ${join(directory, CONFIG_FILE_NAME)}: ${err.message}`);
+    } else {
+      logger.error(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return null;
   }
 
@@ -74,11 +79,21 @@ async function loadConfigFile(directory: string, logger: Logger): Promise<Plugin
   try {
     return validatePluginConfig(processed) as PluginConfig;
   } catch (err) {
-    if (err && typeof err === "object" && "issues" in err) {
-      logger.error(`Invalid config in ${directory}: ${(err as { issues: unknown[] }).issues.map(String).join(", ")}`);
+    if (err instanceof ZodError) {
+      const details = err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      logger.error(`Invalid config in ${directory}: ${details}`);
       return null;
     }
     throw err;
+  }
+}
+
+export function validateResolvedConfig(config: ResolvedPluginConfig): void {
+  if (config.plexusAdminKey && !config.openCodePlexusProviderName) {
+    throw new Error("openCodePlexusProviderName is required when plexusAdminKey is set");
+  }
+  if (config.openCodePlexusProviderName && !config.plexusAdminKey) {
+    throw new Error("plexusAdminKey is required when openCodePlexusProviderName is set");
   }
 }
 
@@ -98,15 +113,21 @@ async function getPluginConfig(directory: string, logger: Logger): Promise<Resol
     ) as Record<string, Record<string, unknown>>,
   };
 
-  return {
+  const resolved: ResolvedPluginConfig = {
     plexusUrl: merged.plexusUrl || DEFAULT_PLEXUS_URL,
     syntheticApiUrl: merged.syntheticApiUrl || SYNTHETIC_API_BASE_URL,
-    providerName: merged.providerName || (merged.plexusAdminKey ? "synthetic-plexus" : "synthetic"),
+    openCodeSyntheticProviderName: merged.openCodeSyntheticProviderName,
+    openCodePlexusProviderName: merged.openCodePlexusProviderName,
+    plexusProviderName: merged.plexusProviderName || "synthetic",
     syntheticApiKey: merged.syntheticApiKey,
     plexusAdminKey: merged.plexusAdminKey,
     cacheDiscount: merged.cacheDiscount ?? DEFAULT_CACHE_DISCOUNT,
     modelOptions: merged.modelOptions || {},
   };
+
+  validateResolvedConfig(resolved);
+
+  return resolved;
 }
 
 export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
@@ -143,35 +164,43 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       }
 
       try {
-        let models: SyntheticModel[];
-        let baseURL: string;
+        const models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
+
+        if (pluginConfig.openCodeSyntheticProviderName) {
+          updateOpenCodeConfig(
+            cfg,
+            models,
+            pluginConfig.syntheticApiUrl,
+            pluginConfig.openCodeSyntheticProviderName,
+            pluginConfig.modelOptions,
+            pluginConfig.cacheDiscount,
+            logger,
+          );
+        }
 
         if (pluginConfig.plexusAdminKey) {
-          const syntheticModels = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
-          const syncResult = await syncPlexusModels(
+          await syncPlexusModels(
             pluginConfig.plexusUrl,
             pluginConfig.plexusAdminKey,
-            syntheticModels,
+            models,
             logger,
             pluginConfig.syntheticApiKey,
             pluginConfig.cacheDiscount,
+            pluginConfig.plexusProviderName,
           );
-          models = syncResult.models;
-          baseURL = `${pluginConfig.plexusUrl}/v1`;
-        } else {
-          models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
-          baseURL = pluginConfig.syntheticApiUrl;
-        }
 
-        updateOpenCodeConfig(
-          cfg,
-          models,
-          baseURL,
-          pluginConfig.providerName,
-          pluginConfig.modelOptions,
-          pluginConfig.cacheDiscount,
-          logger,
-        );
+          if (pluginConfig.openCodePlexusProviderName) {
+            updateOpenCodeConfig(
+              cfg,
+              models,
+              `${pluginConfig.plexusUrl}/v1`,
+              pluginConfig.openCodePlexusProviderName,
+              pluginConfig.modelOptions,
+              pluginConfig.cacheDiscount,
+              logger,
+            );
+          }
+        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const stackTrace = error instanceof Error && error.stack ? `\n${error.stack}` : "";

@@ -77,7 +77,7 @@ export function convertSyntheticModelToOpenCode(
 export function buildProviderConfig(
   models: SyntheticModel[],
   baseURL: string,
-  providerName: string,
+  openCodeProviderName: string,
   modelOptions?: Record<string, Record<string, unknown>>,
   cacheDiscount: number = 0,
 ): {
@@ -97,7 +97,7 @@ export function buildProviderConfig(
 
   return {
     npm: "@ai-sdk/openai-compatible",
-    name: providerName,
+    name: openCodeProviderName,
     options: { baseURL },
     models: modelsConfig,
   };
@@ -107,15 +107,15 @@ export function updateOpenCodeConfig(
   config: OpenCodeAppConfig,
   models: SyntheticModel[],
   baseURL: string,
-  providerName: string,
+  openCodeProviderName: string,
   modelOptions: Record<string, Record<string, unknown>>,
   cacheDiscount: number,
   logger: Logger,
 ): OpenCodeAppConfig {
-  const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions, cacheDiscount);
+  const providerConfig = buildProviderConfig(models, baseURL, openCodeProviderName, modelOptions, cacheDiscount);
 
   const provider = config.provider || {};
-  provider[providerName] = providerConfig as unknown;
+  provider[openCodeProviderName] = providerConfig as unknown;
   config.provider = provider;
 
   logger.info(`Updated config with ${models.length} models`);

@@ -75,13 +75,15 @@ const PluginConfigSchema = z
   .object({
     plexusUrl: z.string().optional(),
     syntheticApiUrl: z.string().optional(),
-    providerName: z.string().optional(),
+    openCodeSyntheticProviderName: z.string().optional(),
+    openCodePlexusProviderName: z.string().optional(),
+    plexusProviderName: z.string().optional(),
     syntheticApiKey: z.string().optional(),
     plexusAdminKey: z.string().optional(),
     cacheDiscount: z.number().min(0).max(100).optional(),
     modelOptions: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
   })
-  .passthrough();
+  .strict();
 
 export function validateSyntheticApiResponse(data: unknown): { data: SyntheticModel[] } {
   return SyntheticApiResponseSchema.parse(data) as { data: SyntheticModel[] };
