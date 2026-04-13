@@ -31,7 +31,7 @@ jobs:
     steps:
       # On tag push: version input is empty, so ref defaults to the tag that triggered the workflow.
       # On manual dispatch: checks out the tag matching the entered version (e.g. "1.2.3" -> "v1.2.3").
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || '' }}
 
