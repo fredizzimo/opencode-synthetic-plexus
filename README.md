@@ -20,12 +20,6 @@ An [OpenCode](https://opencode.ai) plugin that syncs AI models from [Synthetic](
 
 ## Installation
 
-### From npm (Recommended)
-
-```bash
-npm install @fredizzimo/opencode-synthetic-plexus
-```
-
 Add the plugin to your OpenCode configuration (`~/.config/opencode/opencode.json`):
 
 ```json
@@ -208,9 +202,9 @@ If the tag push succeeded but npm publishing failed, you can re-run just the pub
 3. Enter the version number (e.g. `1.2.3`)
 4. This checks out the corresponding tag and re-attempts the publish, skipping the GitHub Release step since it already exists.
 
-### Required secrets
+### Trusted publishing
 
-- `NPM_TOKEN` — Add in GitHub repo settings under **Settings → Secrets → Actions**
+This package uses [npm trusted publishing](https://docs.npmjs.com/guides/publishing-a-package#publishing-from-github-actions) (OIDC) to publish from GitHub Actions without storing long-lived tokens. No `NPM_TOKEN` secret is required.
 
 ## License
 
