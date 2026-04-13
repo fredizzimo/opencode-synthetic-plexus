@@ -118,6 +118,7 @@ export interface PluginConfig {
   providerName?: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
+  cacheDiscount?: number;
   modelOptions?: Record<string, Record<string, unknown>>;
 }
 
@@ -127,6 +128,7 @@ export interface ResolvedPluginConfig {
   providerName: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
+  cacheDiscount: number;
   modelOptions: Record<string, Record<string, unknown>>;
 }
 

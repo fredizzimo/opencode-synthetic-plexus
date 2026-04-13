@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { readFile } from "node:fs/promises";
 
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
+const DEFAULT_CACHE_DISCOUNT = 80;
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
 export function substituteEnvVars(
@@ -103,6 +104,7 @@ async function getPluginConfig(directory: string, logger: Logger): Promise<Resol
     providerName: merged.providerName || (merged.plexusAdminKey ? "synthetic-plexus" : "synthetic"),
     syntheticApiKey: merged.syntheticApiKey,
     plexusAdminKey: merged.plexusAdminKey,
+    cacheDiscount: merged.cacheDiscount ?? DEFAULT_CACHE_DISCOUNT,
     modelOptions: merged.modelOptions || {},
   };
 }
@@ -152,6 +154,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
             syntheticModels,
             logger,
             pluginConfig.syntheticApiKey,
+            pluginConfig.cacheDiscount,
           );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl}/v1`;
@@ -160,7 +163,15 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
           baseURL = pluginConfig.syntheticApiUrl;
         }
 
-        updateOpenCodeConfig(cfg, models, baseURL, pluginConfig.providerName, pluginConfig.modelOptions, logger);
+        updateOpenCodeConfig(
+          cfg,
+          models,
+          baseURL,
+          pluginConfig.providerName,
+          pluginConfig.modelOptions,
+          pluginConfig.cacheDiscount,
+          logger,
+        );
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const stackTrace = error instanceof Error && error.stack ? `\n${error.stack}` : "";

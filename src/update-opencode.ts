@@ -23,6 +23,7 @@ export function deepMerge(target: Record<string, unknown>, source: Record<string
 export function convertSyntheticModelToOpenCode(
   model: SyntheticModel,
   userConfig?: Record<string, unknown>,
+  cacheDiscount: number = 0,
 ): OpenCodeModelConfig {
   const modelConfig: OpenCodeModelConfig = {};
 
@@ -59,7 +60,7 @@ export function convertSyntheticModelToOpenCode(
     output: parsePrice(model.pricing.completion),
   };
   if (model.pricing.input_cache_reads) {
-    cost.cache_read = parsePrice(model.pricing.input_cache_reads);
+    cost.cache_read = parsePrice(model.pricing.input_cache_reads) * (1 - cacheDiscount / 100);
   }
   if (model.pricing.input_cache_writes) {
     cost.cache_write = parsePrice(model.pricing.input_cache_writes);
@@ -78,6 +79,7 @@ export function buildProviderConfig(
   baseURL: string,
   providerName: string,
   modelOptions?: Record<string, Record<string, unknown>>,
+  cacheDiscount: number = 0,
 ): {
   npm: string;
   name: string;
@@ -90,7 +92,7 @@ export function buildProviderConfig(
 
   for (const model of models) {
     const aliasName = aliasMap.get(model.id)!;
-    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions?.[aliasName]);
+    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions?.[aliasName], cacheDiscount);
   }
 
   return {
@@ -107,9 +109,10 @@ export function updateOpenCodeConfig(
   baseURL: string,
   providerName: string,
   modelOptions: Record<string, Record<string, unknown>>,
+  cacheDiscount: number,
   logger: Logger,
 ): OpenCodeAppConfig {
-  const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions);
+  const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions, cacheDiscount);
 
   const provider = config.provider || {};
   provider[providerName] = providerConfig as unknown;
