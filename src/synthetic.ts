@@ -84,7 +84,10 @@ export function parsePrice(priceStr: string): number {
   return value * 1_000_000;
 }
 
-export async function fetchSyntheticModels(apiKey: string, baseURL: string = SYNTHETIC_API_BASE_URL): Promise<SyntheticModel[]> {
+export async function fetchSyntheticModels(
+  apiKey: string,
+  baseURL: string = SYNTHETIC_API_BASE_URL,
+): Promise<SyntheticModel[]> {
   info("Fetching models from Synthetic API...");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -96,9 +99,7 @@ export async function fetchSyntheticModels(apiKey: string, baseURL: string = SYN
       signal: controller.signal,
     });
     if (!response.ok) {
-      throw new Error(
-        `Failed to fetch Synthetic models: ${response.status} ${response.statusText}`
-      );
+      throw new Error(`Failed to fetch Synthetic models: ${response.status} ${response.statusText}`);
     }
     const raw = await response.json();
     const data = validateSyntheticApiResponse(raw);

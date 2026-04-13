@@ -5,7 +5,13 @@ import { info } from "./log.js";
 export function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
   const result = { ...target };
   for (const key of Object.keys(source)) {
-    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key]) && result[key] && typeof result[key] === "object") {
+    if (
+      source[key] &&
+      typeof source[key] === "object" &&
+      !Array.isArray(source[key]) &&
+      result[key] &&
+      typeof result[key] === "object"
+    ) {
       result[key] = deepMerge(result[key] as Record<string, unknown>, source[key] as Record<string, unknown>);
     } else {
       result[key] = source[key];
@@ -14,7 +20,10 @@ export function deepMerge(target: Record<string, unknown>, source: Record<string
   return result;
 }
 
-function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Record<string, unknown>): OpenCodeModelConfig {
+function convertSyntheticModelToOpenCode(
+  model: SyntheticModel,
+  userConfig?: Record<string, unknown>,
+): OpenCodeModelConfig {
   const modelConfig: OpenCodeModelConfig = {};
 
   modelConfig.name = getModelSimpleName(model.id);
@@ -36,8 +45,12 @@ function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Rec
     modelConfig.limit = { context: model.context_length, output: model.max_output_length ?? 0 };
   }
 
-  if (Array.isArray(model.input_modalities) && model.input_modalities.length > 0
-    && Array.isArray(model.output_modalities) && model.output_modalities.length > 0) {
+  if (
+    Array.isArray(model.input_modalities) &&
+    model.input_modalities.length > 0 &&
+    Array.isArray(model.output_modalities) &&
+    model.output_modalities.length > 0
+  ) {
     modelConfig.modalities = { input: model.input_modalities, output: model.output_modalities };
   }
 
@@ -64,7 +77,7 @@ export function buildProviderConfig(
   models: SyntheticModel[],
   baseURL: string,
   providerName: string,
-  modelOptions?: Record<string, Record<string, unknown>>
+  modelOptions?: Record<string, Record<string, unknown>>,
 ): {
   npm: string;
   name: string;
@@ -73,7 +86,7 @@ export function buildProviderConfig(
 } {
   const modelsConfig: Record<string, OpenCodeModelConfig> = {};
 
-  const aliasMap = buildModelAliases(models.map(m => m.id));
+  const aliasMap = buildModelAliases(models.map((m) => m.id));
 
   for (const model of models) {
     const aliasName = aliasMap.get(model.id)!;
@@ -93,7 +106,7 @@ export function updateOpenCodeConfig(
   models: SyntheticModel[],
   baseURL: string,
   providerName: string,
-  modelOptions?: Record<string, Record<string, unknown>>
+  modelOptions?: Record<string, Record<string, unknown>>,
 ): OpenCodeAppConfig {
   const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions);
 

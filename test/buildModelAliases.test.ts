@@ -37,21 +37,14 @@ describe("buildModelAliases", () => {
   });
 
   it("resolves deep collisions across three segments", () => {
-    expect(
-      asObject([
-        "org-a/proxy/claude-3",
-        "org-b/proxy/claude-3",
-      ])
-    ).toEqual({
+    expect(asObject(["org-a/proxy/claude-3", "org-b/proxy/claude-3"])).toEqual({
       "org-a/proxy/claude-3": "org-a/proxy/claude-3",
       "org-b/proxy/claude-3": "org-b/proxy/claude-3",
     });
   });
 
   it("handles three-way collision", () => {
-    expect(
-      asObject(["a/llama", "b/llama", "c/llama"])
-    ).toEqual({
+    expect(asObject(["a/llama", "b/llama", "c/llama"])).toEqual({
       "a/llama": "a/llama",
       "b/llama": "b/llama",
       "c/llama": "c/llama",
@@ -59,9 +52,7 @@ describe("buildModelAliases", () => {
   });
 
   it("handles partial collision where some share a suffix but others differ", () => {
-    expect(
-      asObject(["a/llama", "b/llama", "c/mixtral"])
-    ).toEqual({
+    expect(asObject(["a/llama", "b/llama", "c/mixtral"])).toEqual({
       "a/llama": "a/llama",
       "b/llama": "b/llama",
       "c/mixtral": "mixtral",
@@ -73,9 +64,7 @@ describe("buildModelAliases", () => {
   });
 
   it("handles models with different path depths", () => {
-    expect(
-      asObject(["deep/nested/model-a", "shallow/model-a"])
-    ).toEqual({
+    expect(asObject(["deep/nested/model-a", "shallow/model-a"])).toEqual({
       "deep/nested/model-a": "nested/model-a",
       "shallow/model-a": "shallow/model-a",
     });

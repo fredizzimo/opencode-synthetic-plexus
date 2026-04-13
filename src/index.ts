@@ -85,7 +85,7 @@ async function getPluginConfig(directory: string): Promise<ResolvedPluginConfig>
     ...projectConfig,
     modelOptions: deepMerge(
       (globalConfig?.modelOptions || {}) as Record<string, unknown>,
-      (projectConfig?.modelOptions || {}) as Record<string, unknown>
+      (projectConfig?.modelOptions || {}) as Record<string, unknown>,
     ) as Record<string, Record<string, unknown>>,
   };
 
@@ -137,7 +137,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
           const syncResult = await syncPlexusModels(
             pluginConfig.plexusUrl,
             pluginConfig.plexusAdminKey,
-            syntheticModels
+            syntheticModels,
           );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl}/v1`;
@@ -146,13 +146,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
           baseURL = pluginConfig.syntheticApiUrl;
         }
 
-        updateOpenCodeConfig(
-          cfg,
-          models,
-          baseURL,
-          pluginConfig.providerName,
-          pluginConfig.modelOptions
-        );
+        updateOpenCodeConfig(cfg, models, baseURL, pluginConfig.providerName, pluginConfig.modelOptions);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const stackTrace = pluginConfig.verbose && error instanceof Error && error.stack ? `\n${error.stack}` : "";
