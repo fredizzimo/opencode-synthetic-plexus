@@ -169,4 +169,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
   };
 };
 
-export default SyntheticPlexusPlugin;
+export default {
+  id: "synthetic-plexus",
+  server: SyntheticPlexusPlugin,
+};
