@@ -62,33 +62,6 @@ export interface PlexusProvider {
   models?: Record<string, PlexusModelConfig>;
 }
 
-export interface PlexusConfig {
-  providers: Record<string, PlexusProvider>;
-  models: Record<string, PlexusAlias>;
-  keys?: Record<string, unknown>;
-}
-
-export interface PlexusModelData {
-  id: string;
-  name?: string;
-  supported_parameters?: string[];
-  context_length?: number;
-  top_provider?: {
-    context_length?: number;
-    max_completion_tokens?: number;
-  };
-  architecture?: {
-    input_modalities?: string[];
-    output_modalities?: string[];
-  };
-  pricing?: {
-    prompt?: string;
-    completion?: string;
-    input_cache_read?: string;
-    input_cache_write?: string;
-  };
-}
-
 export interface OpenCodeModelConfig {
   id?: string;
   name?: string;

@@ -1,8 +1,8 @@
 import type { OpenCodeAppConfig, OpenCodeModelConfig, SyntheticModel } from "./types.js";
-import { parsePrice, buildModelAliases } from "./synthetic.js";
+import { parsePrice, buildModelAliases, getModelSimpleName } from "./synthetic.js";
 import { info } from "./log.js";
 
-function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+export function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
   const result = { ...target };
   for (const key of Object.keys(source)) {
     if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key]) && result[key] && typeof result[key] === "object") {
@@ -17,8 +17,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
 function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Record<string, unknown>): OpenCodeModelConfig {
   const modelConfig: OpenCodeModelConfig = {};
 
-  const parts = model.id.split("/");
-  modelConfig.name = parts[parts.length - 1];
+  modelConfig.name = getModelSimpleName(model.id);
 
   if (model.supported_features?.includes("tools")) {
     modelConfig.tool_call = true;

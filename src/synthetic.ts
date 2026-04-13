@@ -2,9 +2,13 @@ import type { SyntheticModel } from "./types.js";
 import { validateSyntheticApiResponse } from "./validate.js";
 import { info } from "./log.js";
 
-const SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1/models";
+export const SYNTHETIC_API_BASE_URL = "https://api.synthetic.new/openai/v1";
 
 export const FETCH_TIMEOUT_MS = 5_000;
+
+export function getModelSimpleName(modelId: string): string {
+  return modelId.split("/").pop() || modelId;
+}
 
 /**
  * Build collision-resistant aliases for model IDs.
@@ -80,12 +84,12 @@ export function parsePrice(priceStr: string): number {
   return value * 1_000_000;
 }
 
-export async function fetchSyntheticModels(apiKey: string): Promise<SyntheticModel[]> {
+export async function fetchSyntheticModels(apiKey: string, baseURL: string = SYNTHETIC_API_BASE_URL): Promise<SyntheticModel[]> {
   info("Fetching models from Synthetic API...");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const response = await fetch(SYNTHETIC_API_URL, {
+    const response = await fetch(`${baseURL}/models`, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },

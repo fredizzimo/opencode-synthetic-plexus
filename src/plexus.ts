@@ -1,5 +1,5 @@
 import type { PlexusAlias, PlexusModelConfig, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
-import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases } from "./synthetic.js";
+import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
 import { info } from "./log.js";
 
@@ -187,7 +187,7 @@ export async function syncPlexusModels(plexusUrl: string, adminKey: string, synt
   const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic", adminKey);
   const syntheticProvider: PlexusProvider = {
     ...existingProvider,
-    api_base_url: existingProvider?.api_base_url || { chat: "https://api.synthetic.new/openai/v1" },
+    api_base_url: existingProvider?.api_base_url || { chat: SYNTHETIC_API_BASE_URL },
     display_name: existingProvider?.display_name || "Synthetic",
     enabled: existingProvider?.enabled !== false,
     models: buildSyntheticProviderModels(syntheticModels),

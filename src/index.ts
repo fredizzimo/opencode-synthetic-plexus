@@ -1,15 +1,15 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
 import type { SyntheticModel, PluginConfig, ResolvedPluginConfig, OpenCodeAppConfig } from "./types.js";
-import { fetchSyntheticModels } from "./synthetic.js";
+import { fetchSyntheticModels, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
-import { updateOpenCodeConfig } from "./update-opencode.js";
+import { updateOpenCodeConfig, deepMerge } from "./update-opencode.js";
 import { validatePluginConfig } from "./validate.js";
 import { setVerbose, error as logError, warn as logWarn } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
-const DEFAULT_SYNTHETIC_API_URL = "https://api.synthetic.new/openai/v1";
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
 function substituteEnvVars(value: string, missing: Set<string>): string {
@@ -43,9 +43,8 @@ function processConfigValues(obj: unknown, missing: Set<string>): unknown {
 async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
   let parsed: unknown;
   try {
-    const fs = await import("node:fs/promises");
     const configPath = join(directory, CONFIG_FILE_NAME);
-    const content = await fs.readFile(configPath, "utf-8");
+    const content = await readFile(configPath, "utf-8");
     parsed = JSON.parse(content);
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
@@ -84,11 +83,15 @@ async function getPluginConfig(directory: string): Promise<ResolvedPluginConfig>
   const merged: PluginConfig = {
     ...globalConfig,
     ...projectConfig,
+    modelOptions: deepMerge(
+      (globalConfig?.modelOptions || {}) as Record<string, unknown>,
+      (projectConfig?.modelOptions || {}) as Record<string, unknown>
+    ) as Record<string, Record<string, unknown>>,
   };
 
   return {
     plexusUrl: merged.plexusUrl || DEFAULT_PLEXUS_URL,
-    syntheticApiUrl: merged.syntheticApiUrl || DEFAULT_SYNTHETIC_API_URL,
+    syntheticApiUrl: merged.syntheticApiUrl || SYNTHETIC_API_BASE_URL,
     providerName: merged.providerName || (merged.plexusAdminKey ? "synthetic-plexus" : "synthetic"),
     syntheticApiKey: merged.syntheticApiKey,
     plexusAdminKey: merged.plexusAdminKey,
