@@ -23,14 +23,14 @@ An [OpenCode](https://opencode.ai) plugin that syncs AI models from [Synthetic](
 ### From npm (Recommended)
 
 ```bash
-npm install opencode-synthetic-plexus
+npm install @fredizzimo/opencode-synthetic-plexus
 ```
 
 Add the plugin to your OpenCode configuration (`~/.config/opencode/opencode.json`):
 
 ```json
 {
-  "plugins": ["opencode-synthetic-plexus"]
+  "plugins": ["@fredizzimo/opencode-synthetic-plexus"]
 }
 ```
 
