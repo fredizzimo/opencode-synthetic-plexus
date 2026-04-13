@@ -1,0 +1,68 @@
+name: Release
+
+# This workflow has two triggers:
+#
+# 1. Tag push (automatic): When a v* tag is pushed, it creates a GitHub Release
+#    and publishes the package to NPM. This is the normal release flow:
+#      git tag v1.2.3 && git push --tags
+#
+# 2. Manual dispatch (recovery): If the tag push succeeded but NPM publishing
+#    failed, you can re-run just the publish step via "Run workflow" in the
+#    Actions tab. Enter the version (e.g. 1.2.3) and it will check out the
+#    corresponding tag and re-attempt the publish. The GitHub Release step is
+#    skipped since it already exists from the original tag push.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (e.g. 1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # On tag push: version input is empty, so ref defaults to the tag that triggered the workflow.
+      # On manual dispatch: checks out the tag matching the entered version (e.g. "1.2.3" -> "v1.2.3").
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          ref: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || '' }}
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run format:check
+
+      - run: npm test
+
+      - run: npm run build
+
+      # Only create a GitHub Release on tag push — skip on manual dispatch
+      # since the release already exists from the original tag push.
+      - name: Create GitHub Release
+        if: ${{ !github.event.inputs.version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes
+
+      - run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
