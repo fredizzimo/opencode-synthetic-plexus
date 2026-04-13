@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PlexusAlias, PlexusProvider, PluginConfig, SyntheticModel } from "./types.js";
+import type { PlexusAlias, PlexusProvider, PluginConfig, QuotaChecker, SyntheticModel } from "./types.js";
 
 const SyntheticPricingSchema = z
   .object({
@@ -48,6 +48,15 @@ const PlexusAliasSchema = z
   })
   .passthrough();
 
+const QuotaCheckerSchema = z
+  .object({
+    type: z.string(),
+    enabled: z.boolean(),
+    intervalMinutes: z.number().optional(),
+    options: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
 const PlexusProviderSchema = z
   .object({
     api_base_url: z.object({ chat: z.string() }).optional(),
@@ -56,6 +65,7 @@ const PlexusProviderSchema = z
     enabled: z.boolean().optional(),
     disable_cooldown: z.boolean().optional(),
     models: z.record(z.string(), z.unknown()).optional(),
+    quota_checker: QuotaCheckerSchema.optional(),
   })
   .passthrough();
 
@@ -80,8 +90,8 @@ export function validatePlexusAliasesResponse(data: unknown): Record<string, Ple
   return PlexusAliasesResponseSchema.parse(data) as Record<string, PlexusAlias>;
 }
 
-export function validatePlexusProviderResponse(data: unknown): PlexusProvider {
-  return PlexusProviderSchema.parse(data) as PlexusProvider;
+export function validatePlexusProviderResponse(data: unknown): PlexusProvider & { quota_checker?: QuotaChecker } {
+  return PlexusProviderSchema.parse(data) as PlexusProvider & { quota_checker?: QuotaChecker };
 }
 
 export function validatePluginConfig(data: unknown): PluginConfig {

@@ -151,6 +151,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
             pluginConfig.plexusAdminKey,
             syntheticModels,
             logger,
+            pluginConfig.syntheticApiKey,
           );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl}/v1`;
