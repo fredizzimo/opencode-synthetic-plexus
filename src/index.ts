@@ -1,5 +1,5 @@
 import type { Plugin, Config } from "@opencode-ai/plugin";
-import type { SyntheticModel, PluginConfig, ResolvedPluginConfig, OpenCodeAppConfig } from "./types.js";
+import type { PluginConfig, ResolvedPluginConfig, OpenCodeAppConfig } from "./types.js";
 import { fetchSyntheticModels, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig, deepMerge } from "./update-opencode.js";
@@ -12,6 +12,7 @@ import { readFile } from "node:fs/promises";
 
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
 const DEFAULT_CACHE_DISCOUNT = 80;
+const DEFAULT_SYNTHETIC_PROVIDER_NAME = "synthetic-direct";
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
 export function substituteEnvVars(
@@ -89,6 +90,11 @@ async function loadConfigFile(directory: string, logger: Logger): Promise<Plugin
 }
 
 export function validateResolvedConfig(config: ResolvedPluginConfig): void {
+  if (config.openCodeSyntheticProviderName === "synthetic") {
+    throw new Error(
+      'openCodeSyntheticProviderName cannot be "synthetic" — it collides with models.dev. Use a different name (default: "synthetic-direct")',
+    );
+  }
   if (config.plexusAdminKey && !config.openCodePlexusProviderName) {
     throw new Error("openCodePlexusProviderName is required when plexusAdminKey is set");
   }
@@ -116,7 +122,7 @@ async function getPluginConfig(directory: string, logger: Logger): Promise<Resol
   const resolved: ResolvedPluginConfig = {
     plexusUrl: merged.plexusUrl || DEFAULT_PLEXUS_URL,
     syntheticApiUrl: merged.syntheticApiUrl || SYNTHETIC_API_BASE_URL,
-    openCodeSyntheticProviderName: merged.openCodeSyntheticProviderName,
+    openCodeSyntheticProviderName: merged.openCodeSyntheticProviderName ?? DEFAULT_SYNTHETIC_PROVIDER_NAME,
     openCodePlexusProviderName: merged.openCodePlexusProviderName,
     plexusProviderName: merged.plexusProviderName || "synthetic",
     syntheticApiKey: merged.syntheticApiKey,
@@ -166,17 +172,16 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       try {
         const models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
 
-        if (pluginConfig.openCodeSyntheticProviderName) {
-          updateOpenCodeConfig(
-            cfg,
-            models,
-            pluginConfig.syntheticApiUrl,
-            pluginConfig.openCodeSyntheticProviderName,
-            pluginConfig.modelOptions,
-            pluginConfig.cacheDiscount,
-            logger,
-          );
-        }
+        updateOpenCodeConfig(
+          cfg,
+          models,
+          pluginConfig.syntheticApiUrl,
+          pluginConfig.openCodeSyntheticProviderName,
+          true,
+          pluginConfig.modelOptions,
+          pluginConfig.cacheDiscount,
+          logger,
+        );
 
         if (pluginConfig.plexusAdminKey) {
           await syncPlexusModels(
@@ -195,6 +200,7 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
               models,
               `${pluginConfig.plexusUrl}/v1`,
               pluginConfig.openCodePlexusProviderName,
+              false,
               pluginConfig.modelOptions,
               pluginConfig.cacheDiscount,
               logger,

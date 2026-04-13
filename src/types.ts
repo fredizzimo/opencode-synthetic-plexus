@@ -127,7 +127,7 @@ export interface PluginConfig {
 export interface ResolvedPluginConfig {
   plexusUrl: string;
   syntheticApiUrl: string;
-  openCodeSyntheticProviderName?: string;
+  openCodeSyntheticProviderName: string;
   openCodePlexusProviderName?: string;
   plexusProviderName: string;
   syntheticApiKey?: string;

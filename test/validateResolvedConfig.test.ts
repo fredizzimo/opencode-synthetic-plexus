@@ -6,6 +6,7 @@ function baseConfig(overrides: Partial<ResolvedPluginConfig> = {}): ResolvedPlug
   return {
     plexusUrl: "http://localhost:8080",
     syntheticApiUrl: "https://api.synthetic.new/openai/v1",
+    openCodeSyntheticProviderName: "synthetic-direct",
     plexusProviderName: "synthetic",
     cacheDiscount: 80,
     modelOptions: {},
@@ -30,19 +31,25 @@ describe("validateResolvedConfig", () => {
   });
 
   it("accepts config with openCodeSyntheticProviderName only", () => {
-    expect(() => validateResolvedConfig(baseConfig({ openCodeSyntheticProviderName: "synthetic" }))).not.toThrow();
+    expect(() => validateResolvedConfig(baseConfig({ openCodeSyntheticProviderName: "my-provider" }))).not.toThrow();
   });
 
   it("accepts config with both provider names and plexus", () => {
     expect(() =>
       validateResolvedConfig(
         baseConfig({
-          openCodeSyntheticProviderName: "synthetic",
+          openCodeSyntheticProviderName: "my-provider",
           openCodePlexusProviderName: "synthetic-plexus",
           plexusAdminKey: "key",
         }),
       ),
     ).not.toThrow();
+  });
+
+  it("throws when openCodeSyntheticProviderName is synthetic", () => {
+    expect(() => validateResolvedConfig(baseConfig({ openCodeSyntheticProviderName: "synthetic" }))).toThrow(
+      'openCodeSyntheticProviderName cannot be "synthetic"',
+    );
   });
 
   it("throws when plexusAdminKey is set without openCodePlexusProviderName", () => {
