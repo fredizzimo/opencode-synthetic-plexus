@@ -12,9 +12,13 @@ import { readFile } from "node:fs/promises";
 const DEFAULT_PLEXUS_URL = "http://localhost:8080";
 const CONFIG_FILE_NAME = "synthetic-plexus.json";
 
-function substituteEnvVars(value: string, missing: Set<string>): string {
+export function substituteEnvVars(
+  value: string,
+  missing: Set<string>,
+  env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
+): string {
   return value.replace(/\{env:([^}]+)\}/g, (_, varName) => {
-    const envValue = process.env[varName];
+    const envValue = env[varName];
     if (envValue === undefined) {
       missing.add(varName);
       return `{env:${varName}}`;
@@ -23,17 +27,21 @@ function substituteEnvVars(value: string, missing: Set<string>): string {
   });
 }
 
-function processConfigValues(obj: unknown, missing: Set<string>): unknown {
+export function processConfigValues(
+  obj: unknown,
+  missing: Set<string>,
+  env?: Record<string, string | undefined>,
+): unknown {
   if (typeof obj === "string") {
-    return substituteEnvVars(obj, missing);
+    return substituteEnvVars(obj, missing, env ?? (process.env as Record<string, string | undefined>));
   }
   if (Array.isArray(obj)) {
-    return obj.map((v) => processConfigValues(v, missing));
+    return obj.map((v) => processConfigValues(v, missing, env));
   }
   if (obj && typeof obj === "object") {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      result[key] = processConfigValues(value, missing);
+      result[key] = processConfigValues(value, missing, env);
     }
     return result;
   }

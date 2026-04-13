@@ -20,7 +20,7 @@ export function deepMerge(target: Record<string, unknown>, source: Record<string
   return result;
 }
 
-function convertSyntheticModelToOpenCode(
+export function convertSyntheticModelToOpenCode(
   model: SyntheticModel,
   userConfig?: Record<string, unknown>,
 ): OpenCodeModelConfig {

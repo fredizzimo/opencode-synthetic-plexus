@@ -20,7 +20,7 @@ function buildSyntheticProviderModels(models: SyntheticModel[]): Record<string, 
   return result;
 }
 
-function buildSyntheticAlias(model: SyntheticModel, existingAlias?: PlexusAlias): PlexusAlias {
+export function buildSyntheticAlias(model: SyntheticModel, existingAlias?: PlexusAlias): PlexusAlias {
   const targets = existingAlias?.targets || [];
   const nonSyntheticTargets = targets.filter((t) => t.provider !== "synthetic");
   const syntheticTarget: PlexusTarget = {
