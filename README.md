@@ -189,7 +189,7 @@ Releases are automated via GitHub Actions. Pushing a `v*` tag triggers the relea
    git add package.json
    git commit -m "Release v1.2.3"
    git tag v1.2.3
-   git push origin master --tags
+   git push origin main --tags
    ```
 3. The CI workflow will run checks, create a GitHub Release with auto-generated notes, and publish the package to npm.
 
