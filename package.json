@@ -35,8 +35,11 @@
     "plexus",
     "models"
   ],
-  "author": "",
+  "author": "Fred Sundvik",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "peerDependencies": {
     "@opencode-ai/plugin": "^1.3.6"
   },
@@ -48,7 +51,6 @@
     "vitest": "^4.1.4"
   },
   "dependencies": {
-    "yaml": "^2.7.0",
     "zod": "^4.3.6"
   }
 }
