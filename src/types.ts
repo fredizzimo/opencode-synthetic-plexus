@@ -1,21 +1,29 @@
 export interface SyntheticPricing {
   prompt: string;
   completion: string;
+  image?: string;
+  request?: string;
   input_cache_reads?: string;
   input_cache_writes?: string;
 }
 
 export interface SyntheticModel {
   provider: "synthetic" | "fireworks" | "together";
+  always_on?: boolean;
   id: string;
+  hugging_face_id?: string;
   name: string;
   input_modalities: string[];
   output_modalities: string[];
   context_length: number;
   max_output_length: number;
   pricing: SyntheticPricing;
+  created?: number;
+  quantization?: string;
+  supported_sampling_parameters?: string[];
   supported_features: string[];
   openrouter?: { slug: string };
+  datacenters?: { country_code: string }[];
 }
 
 export interface PlexusPricing {
@@ -83,27 +91,45 @@ export interface PlexusModelData {
 }
 
 export interface OpenCodeModelConfig {
+  id?: string;
   name?: string;
-  tool_call?: boolean;
+  family?: string;
+  release_date?: string;
+  attachment?: boolean;
   reasoning?: boolean;
   temperature?: boolean;
-  limit?: {
-    context?: number;
-    output?: number;
-  };
-  modalities?: {
-    input?: string[];
-    output?: string[];
-  };
+  tool_call?: boolean;
+  interleaved?: boolean | { field: "reasoning_content" | "reasoning_details" };
   cost?: {
-    input?: number;
-    output?: number;
+    input: number;
+    output: number;
     cache_read?: number;
     cache_write?: number;
+    context_over_200k?: {
+      input: number;
+      output: number;
+      cache_read?: number;
+      cache_write?: number;
+    };
+  };
+  limit?: {
+    context: number;
+    output: number;
+    input?: number;
+  };
+  modalities?: {
+    input: string[];
+    output: string[];
+  };
+  experimental?: boolean;
+  status?: "alpha" | "beta" | "deprecated";
+  provider?: {
+    npm: string;
+    api: string;
   };
   options?: Record<string, unknown>;
+  headers?: Record<string, string>;
   variants?: Record<string, Record<string, unknown>>;
-  [key: string]: unknown;
 }
 
 export interface PluginConfig {

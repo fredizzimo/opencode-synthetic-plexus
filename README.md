@@ -145,6 +145,30 @@ User-provided options are deep-merged with the generated configuration, so you c
 
 See the [OpenCode models documentation](https://opencode.ai/docs/models/) for all available configuration options.
 
+### Interleaved Thinking
+
+Some reasoning models support **interleaved thinking**, where reasoning tokens are interleaved with the response. OpenCode supports this via the `interleaved` field, but the Synthetic API does not currently expose this information. To enable it for models that support it, set it manually via `modelOptions`:
+
+```json
+{
+  "modelOptions": {
+    "DeepSeek-R1": {
+      "interleaved": { "field": "reasoning_content" }
+    },
+    "MiniMax-M2.5": {
+      "interleaved": { "field": "reasoning_details" }
+    }
+  }
+}
+```
+
+The `interleaved` field accepts three values:
+- `true` — models with native interleaved thinking support (e.g., Anthropic Claude)
+- `{ "field": "reasoning_content" }` — DeepSeek, Kimi, Qwen3, and similar models
+- `{ "field": "reasoning_details" }` — Gemini 3.x, MiniMax M2.x, GLM 4.7+, and similar models
+
+You can check [models.dev/api.json](https://models.dev/api.json) to see which `interleaved` value a model uses — search for the model name and look at its `interleaved` field.
+
 ## How It Works
 
 1. On OpenCode startup, the plugin loads configuration from global and project config files

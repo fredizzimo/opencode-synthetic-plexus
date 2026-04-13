@@ -27,40 +27,35 @@ function convertSyntheticModelToOpenCode(model: SyntheticModel, userConfig?: Rec
     modelConfig.reasoning = true;
   }
 
-  modelConfig.temperature = true;
-
-  const limit: { context?: number; output?: number } = {};
-  if (model.context_length) {
-    limit.context = model.context_length;
-  }
-  if (model.max_output_length) {
-    limit.output = model.max_output_length;
-  }
-  if (limit.context || limit.output) {
-    modelConfig.limit = limit;
+  if (model.supported_sampling_parameters?.includes("temperature")) {
+    modelConfig.temperature = true;
   }
 
-  const modalities: { input?: string[]; output?: string[] } = {};
-  if (model.input_modalities?.length > 0) {
-    modalities.input = model.input_modalities;
-  }
-  if (model.output_modalities?.length > 0) {
-    modalities.output = model.output_modalities;
-  }
-  if (modalities.input || modalities.output) {
-    modelConfig.modalities = modalities;
+  if (model.context_length && model.max_output_length) {
+    modelConfig.limit = { context: model.context_length, output: model.max_output_length };
+  } else if (model.context_length) {
+    modelConfig.limit = { context: model.context_length, output: model.max_output_length ?? 0 };
   }
 
-  const cost: { input?: number; output?: number; cache_read?: number } = {};
-  cost.input = parsePrice(model.pricing.prompt);
-  cost.output = parsePrice(model.pricing.completion);
+  if (Array.isArray(model.input_modalities) && model.input_modalities.length > 0
+    && Array.isArray(model.output_modalities) && model.output_modalities.length > 0) {
+    modelConfig.modalities = { input: model.input_modalities, output: model.output_modalities };
+  }
+
+  const cost: { input: number; output: number; cache_read?: number; cache_write?: number } = {
+    input: parsePrice(model.pricing.prompt),
+    output: parsePrice(model.pricing.completion),
+  };
   if (model.pricing.input_cache_reads) {
     cost.cache_read = parsePrice(model.pricing.input_cache_reads);
+  }
+  if (model.pricing.input_cache_writes) {
+    cost.cache_write = parsePrice(model.pricing.input_cache_writes);
   }
   modelConfig.cost = cost;
 
   if (userConfig) {
-    return deepMerge(modelConfig, userConfig) as OpenCodeModelConfig;
+    return deepMerge(modelConfig as Record<string, unknown>, userConfig) as OpenCodeModelConfig;
   }
 
   return modelConfig;
