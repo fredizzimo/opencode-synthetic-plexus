@@ -1,7 +1,7 @@
 import type { PlexusAlias, PlexusModelConfig, PlexusTarget, PlexusProvider, SyntheticModel } from "./types.js";
 import { parsePrice, FETCH_TIMEOUT_MS, buildModelAliases, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { validatePlexusAliasesResponse, validatePlexusProviderResponse } from "./validate.js";
-import { info } from "./log.js";
+import type { Logger } from "./log.js";
 
 function buildSyntheticProviderModels(models: SyntheticModel[]): Record<string, PlexusModelConfig> {
   const result: Record<string, PlexusModelConfig> = {};
@@ -60,15 +60,19 @@ async function fetchWithAuth(url: string, adminKey: string, options: RequestInit
   }
 }
 
-export async function fetchPlexusAliases(plexusUrl: string, adminKey: string): Promise<Record<string, PlexusAlias>> {
-  info("Fetching current Plexus aliases...");
+export async function fetchPlexusAliases(
+  plexusUrl: string,
+  adminKey: string,
+  logger: Logger,
+): Promise<Record<string, PlexusAlias>> {
+  logger.info("Fetching current Plexus aliases...");
   const response = await fetchWithAuth(`${plexusUrl}/v0/management/aliases`, adminKey);
   if (!response.ok) {
     throw new Error(`Failed to fetch Plexus aliases: ${response.status} ${response.statusText}`);
   }
   const raw = await response.json();
   const aliases = validatePlexusAliasesResponse(raw);
-  info(`Found ${Object.keys(aliases).length} existing aliases`);
+  logger.info(`Found ${Object.keys(aliases).length} existing aliases`);
   return aliases;
 }
 
@@ -197,10 +201,11 @@ export async function syncPlexusModels(
   plexusUrl: string,
   adminKey: string,
   syntheticModels: SyntheticModel[],
+  logger: Logger,
 ): Promise<SyncResult> {
-  info("Starting model sync...");
+  logger.info("Starting model sync...");
 
-  const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey);
+  const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey, logger);
 
   const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic", adminKey);
   const syntheticProvider: PlexusProvider = {
@@ -229,11 +234,11 @@ export async function syncPlexusModels(
   const failures = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
   if (failures.length > 0) {
     for (const f of failures) {
-      info(`Warning: alias save failed: ${f.reason}`);
+      logger.info(`Warning: alias save failed: ${f.reason}`);
     }
-    info(`Sync completed with ${failures.length} alias save failure(s) out of ${syntheticModels.length} models`);
+    logger.info(`Sync completed with ${failures.length} alias save failure(s) out of ${syntheticModels.length} models`);
   } else {
-    info(`Sync completed successfully (${syntheticModels.length} models)`);
+    logger.info(`Sync completed successfully (${syntheticModels.length} models)`);
   }
 
   const currentModelIds = new Set(syntheticModels.map((m) => m.id));
@@ -261,7 +266,7 @@ export async function syncPlexusModels(
   ];
 
   if (cleanupItems.length > 0) {
-    info(
+    logger.info(
       `Cleaning up ${cleanupItems.length} stale alias(es) (${aliasesToDelete.length} delete, ${aliasesToUpdate.length} update)...`,
     );
     const cleanupResults = await allSettledWithConcurrency(
@@ -269,17 +274,17 @@ export async function syncPlexusModels(
       async (item) => {
         if (item.action === "delete") {
           await deletePlexusAlias(plexusUrl, item.name, adminKey);
-          info(`Deleted stale alias '${item.name}'`);
+          logger.info(`Deleted stale alias '${item.name}'`);
         } else {
           await savePlexusAlias(plexusUrl, item.name, item.config!, adminKey);
-          info(`Removed stale Synthetic target(s) from alias '${item.name}'`);
+          logger.info(`Removed stale Synthetic target(s) from alias '${item.name}'`);
         }
       },
       ALIAS_CONCURRENCY,
     );
     const cleanupFailures = cleanupResults.filter((r): r is PromiseRejectedResult => r.status === "rejected");
     for (const f of cleanupFailures) {
-      info(`Warning: stale alias cleanup failed: ${f.reason}`);
+      logger.info(`Warning: stale alias cleanup failed: ${f.reason}`);
     }
   }
 

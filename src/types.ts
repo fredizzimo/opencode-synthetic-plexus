@@ -111,7 +111,6 @@ export interface PluginConfig {
   syntheticApiKey?: string;
   plexusAdminKey?: string;
   modelOptions?: Record<string, Record<string, unknown>>;
-  verbose?: boolean;
 }
 
 export interface ResolvedPluginConfig {
@@ -121,7 +120,6 @@ export interface ResolvedPluginConfig {
   syntheticApiKey?: string;
   plexusAdminKey?: string;
   modelOptions: Record<string, Record<string, unknown>>;
-  verbose: boolean;
 }
 
 export interface OpenCodeAppConfig {

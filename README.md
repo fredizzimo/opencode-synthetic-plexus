@@ -30,9 +30,7 @@ Add the plugin to your OpenCode configuration (`~/.config/opencode/opencode.json
 
 ```json
 {
-  "plugins": [
-    "opencode-synthetic-plexus"
-  ]
+  "plugins": ["opencode-synthetic-plexus"]
 }
 ```
 
@@ -49,9 +47,7 @@ Add the plugin to your OpenCode configuration:
 
 ```json
 {
-  "plugins": [
-    "/path/to/opencode-synthetic-plexus"
-  ]
+  "plugins": ["/path/to/opencode-synthetic-plexus"]
 }
 ```
 
@@ -64,8 +60,7 @@ Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
 ```json
 {
   "providerName": "synthetic",
-  "syntheticApiKey": "your-synthetic-api-key",
-  "verbose": false
+  "syntheticApiKey": "your-synthetic-api-key"
 }
 ```
 
@@ -80,8 +75,7 @@ Set `plexusAdminKey` to enable Plexus mode:
   "providerName": "synthetic-plexus",
   "plexusUrl": "http://localhost:8080",
   "syntheticApiKey": "your-synthetic-api-key",
-  "plexusAdminKey": "your-plexus-admin-key",
-  "verbose": false
+  "plexusAdminKey": "your-plexus-admin-key"
 }
 ```
 
@@ -92,15 +86,14 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 
 ## Configuration Options
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `plexusUrl` | string | `http://localhost:8080` | URL of the Plexus server (used when `plexusAdminKey` is set) |
-| `syntheticApiUrl` | string | `https://api.synthetic.new/openai/v1` | URL of the Synthetic API (used when `plexusAdminKey` is not set) |
-| `providerName` | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config |
-| `syntheticApiKey` | string | - | API key for Synthetic API (required) |
-| `plexusAdminKey` | string | - | Admin key for Plexus management API (enables Plexus mode when set) |
-| `verbose` | boolean | `false` | Enable verbose logging |
-| `modelOptions` | object | `{}` | Custom model config merged with generated config |
+| Option            | Type   | Default                                         | Description                                                        |
+| ----------------- | ------ | ----------------------------------------------- | ------------------------------------------------------------------ |
+| `plexusUrl`       | string | `http://localhost:8080`                         | URL of the Plexus server (used when `plexusAdminKey` is set)       |
+| `syntheticApiUrl` | string | `https://api.synthetic.new/openai/v1`           | URL of the Synthetic API (used when `plexusAdminKey` is not set)   |
+| `providerName`    | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config                           |
+| `syntheticApiKey` | string | -                                               | API key for Synthetic API (required)                               |
+| `plexusAdminKey`  | string | -                                               | Admin key for Plexus management API (enables Plexus mode when set) |
+| `modelOptions`    | object | `{}`                                            | Custom model config merged with generated config                   |
 
 ### Environment Variables
 
@@ -163,6 +156,7 @@ Some reasoning models support **interleaved thinking**, where reasoning tokens a
 ```
 
 The `interleaved` field accepts three values:
+
 - `true` — models with native interleaved thinking support (e.g., Anthropic Claude)
 - `{ "field": "reasoning_content" }` — DeepSeek, Kimi, Qwen3, and similar models
 - `{ "field": "reasoning_details" }` — Gemini 3.x, MiniMax M2.x, GLM 4.7+, and similar models
@@ -198,7 +192,6 @@ npm login
 npm run build
 npm publish
 ```
-
 
 ## License
 

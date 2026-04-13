@@ -4,7 +4,7 @@ import { fetchSyntheticModels, SYNTHETIC_API_BASE_URL } from "./synthetic.js";
 import { syncPlexusModels } from "./plexus.js";
 import { updateOpenCodeConfig, deepMerge } from "./update-opencode.js";
 import { validatePluginConfig } from "./validate.js";
-import { setVerbose, error as logError, warn as logWarn } from "./log.js";
+import { Logger } from "./log.js";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
@@ -40,7 +40,7 @@ function processConfigValues(obj: unknown, missing: Set<string>): unknown {
   return obj;
 }
 
-async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
+async function loadConfigFile(directory: string, logger: Logger): Promise<PluginConfig | null> {
   let parsed: unknown;
   try {
     const configPath = join(directory, CONFIG_FILE_NAME);
@@ -50,7 +50,7 @@ async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
     if (err && typeof err === "object" && "code" in err && (err as NodeJS.ErrnoException).code === "ENOENT") {
       return null;
     }
-    logError(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
+    logger.error(`Failed to load config from ${directory}: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 
@@ -66,19 +66,19 @@ async function loadConfigFile(directory: string): Promise<PluginConfig | null> {
     return validatePluginConfig(processed) as PluginConfig;
   } catch (err) {
     if (err && typeof err === "object" && "issues" in err) {
-      logError(`Invalid config in ${directory}: ${(err as { issues: unknown[] }).issues.map(String).join(", ")}`);
+      logger.error(`Invalid config in ${directory}: ${(err as { issues: unknown[] }).issues.map(String).join(", ")}`);
       return null;
     }
     throw err;
   }
 }
 
-async function getPluginConfig(directory: string): Promise<ResolvedPluginConfig> {
+async function getPluginConfig(directory: string, logger: Logger): Promise<ResolvedPluginConfig> {
   const globalConfigDir = join(homedir(), ".config", "opencode");
   const projectConfigDir = join(directory, ".opencode");
 
-  const globalConfig = await loadConfigFile(globalConfigDir);
-  const projectConfig = await loadConfigFile(projectConfigDir);
+  const globalConfig = await loadConfigFile(globalConfigDir, logger);
+  const projectConfig = await loadConfigFile(projectConfigDir, logger);
 
   const merged: PluginConfig = {
     ...globalConfig,
@@ -96,7 +96,6 @@ async function getPluginConfig(directory: string): Promise<ResolvedPluginConfig>
     syntheticApiKey: merged.syntheticApiKey,
     plexusAdminKey: merged.plexusAdminKey,
     modelOptions: merged.modelOptions || {},
-    verbose: merged.verbose ?? false,
   };
 }
 
@@ -106,58 +105,57 @@ export const SyntheticPlexusPlugin: Plugin = async ({ client, directory }) => {
       const cfg = config as Config & OpenCodeAppConfig;
       let pluginConfig: ResolvedPluginConfig;
 
+      const logger = new Logger({
+        logFn: (level, message) => {
+          client.app
+            .log({
+              body: {
+                service: "synthetic-plexus",
+                level,
+                message,
+              },
+            })
+            .catch(() => {});
+        },
+      });
+
       try {
-        pluginConfig = await getPluginConfig(directory);
+        pluginConfig = await getPluginConfig(directory, logger);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        logError(`Failed to load plugin config: ${errorMessage}`);
-        await client.app.log({
-          body: {
-            service: "synthetic-plexus",
-            level: "error",
-            message: `Failed to load plugin config: ${errorMessage}`,
-          },
-        });
+        logger.error(`Failed to load plugin config: ${errorMessage}`);
         return;
       }
 
       if (!pluginConfig.syntheticApiKey) {
-        logWarn("syntheticApiKey is not configured, skipping model sync");
+        logger.warn("syntheticApiKey is not configured, skipping model sync");
         return;
       }
-
-      setVerbose(pluginConfig.verbose ?? false);
 
       try {
         let models: SyntheticModel[];
         let baseURL: string;
 
         if (pluginConfig.plexusAdminKey) {
-          const syntheticModels = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
+          const syntheticModels = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
           const syncResult = await syncPlexusModels(
             pluginConfig.plexusUrl,
             pluginConfig.plexusAdminKey,
             syntheticModels,
+            logger,
           );
           models = syncResult.models;
           baseURL = `${pluginConfig.plexusUrl}/v1`;
         } else {
-          models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!);
+          models = await fetchSyntheticModels(pluginConfig.syntheticApiKey!, undefined, logger);
           baseURL = pluginConfig.syntheticApiUrl;
         }
 
-        updateOpenCodeConfig(cfg, models, baseURL, pluginConfig.providerName, pluginConfig.modelOptions);
+        updateOpenCodeConfig(cfg, models, baseURL, pluginConfig.providerName, pluginConfig.modelOptions, logger);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const stackTrace = pluginConfig.verbose && error instanceof Error && error.stack ? `\n${error.stack}` : "";
-        logError(`Failed to sync models: ${errorMessage}${stackTrace}`);
-        await client.app.log({
-          body: {
-            service: "synthetic-plexus",
-            level: "error",
-            message: `Failed to sync models: ${errorMessage}${stackTrace}`,
-          },
-        });
+        const stackTrace = error instanceof Error && error.stack ? `\n${error.stack}` : "";
+        logger.error(`Failed to sync models: ${errorMessage}${stackTrace}`);
       }
     },
   };

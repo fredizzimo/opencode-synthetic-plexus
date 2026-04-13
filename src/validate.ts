@@ -69,7 +69,6 @@ const PluginConfigSchema = z
     syntheticApiKey: z.string().optional(),
     plexusAdminKey: z.string().optional(),
     modelOptions: z.record(z.string(), z.record(z.string(), z.unknown())).optional(),
-    verbose: z.boolean().optional(),
   })
   .passthrough();
 

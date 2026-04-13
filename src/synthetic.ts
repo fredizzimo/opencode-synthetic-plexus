@@ -1,6 +1,6 @@
 import type { SyntheticModel } from "./types.js";
 import { validateSyntheticApiResponse } from "./validate.js";
-import { info } from "./log.js";
+import type { Logger } from "./log.js";
 
 export const SYNTHETIC_API_BASE_URL = "https://api.synthetic.new/openai/v1";
 
@@ -87,8 +87,9 @@ export function parsePrice(priceStr: string): number {
 export async function fetchSyntheticModels(
   apiKey: string,
   baseURL: string = SYNTHETIC_API_BASE_URL,
+  logger?: Logger,
 ): Promise<SyntheticModel[]> {
-  info("Fetching models from Synthetic API...");
+  logger?.info("Fetching models from Synthetic API...");
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -103,7 +104,7 @@ export async function fetchSyntheticModels(
     }
     const raw = await response.json();
     const data = validateSyntheticApiResponse(raw);
-    info(`Found ${data.data.length} models from Synthetic API`);
+    logger?.info(`Found ${data.data.length} models from Synthetic API`);
     return data.data;
   } finally {
     clearTimeout(timeout);
