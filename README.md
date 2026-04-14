@@ -53,7 +53,7 @@ Create a configuration file at `~/.config/opencode/synthetic-plexus.json`:
 
 ```json
 {
-  "providerName": "synthetic",
+  "openCodeSyntheticProviderName": "synthetic-direct",
   "syntheticApiKey": "your-synthetic-api-key"
 }
 ```
@@ -62,17 +62,32 @@ Get your Synthetic API key from [synthetic.new](https://synthetic.new/).
 
 ### With Plexus
 
-Set `plexusAdminKey` to enable Plexus mode:
+Set `plexusAdminKey` and `openCodePlexusProviderName` to enable Plexus mode:
 
 ```json
 {
-  "providerName": "synthetic-plexus",
+  "openCodePlexusProviderName": "synthetic-plexus",
   "plexusUrl": "http://localhost:8080",
   "syntheticApiKey": "your-synthetic-api-key",
   "plexusAdminKey": "your-plexus-admin-key"
 }
 ```
 
+You can also register both direct and Plexus providers simultaneously by setting both provider names:
+
+```json
+{
+  "openCodeSyntheticProviderName": "synthetic-direct",
+  "openCodePlexusProviderName": "synthetic-plexus",
+  "plexusUrl": "http://localhost:8080",
+  "syntheticApiKey": "your-synthetic-api-key",
+  "plexusAdminKey": "your-plexus-admin-key"
+}
+```
+
+- `openCodeSyntheticProviderName`: The name used to register the provider **in OpenCode** when connecting directly to Synthetic. Defaults to `"synthetic-direct"`. The name `"synthetic"` is not allowed because it collides with models.dev. This is the name you select when running `opencode provider login`.
+- `openCodePlexusProviderName`: The name used to register the provider **in OpenCode** when connecting through Plexus. No default — must be set explicitly to enable the Plexus provider in OpenCode. This is the name you select when running `opencode provider login`.
+- `plexusProviderName`: The name used to register the provider **inside Plexus**. Defaults to `"synthetic"`. This is an internal Plexus identifier and is separate from the OpenCode provider names above.
 - `syntheticApiKey`: Your Synthetic API key from [synthetic.new](https://synthetic.new/)
 - `plexusAdminKey`: Admin key for Plexus management API (see Plexus documentation)
 
@@ -80,15 +95,17 @@ You can also create a project-specific config at `.opencode/synthetic-plexus.jso
 
 ## Configuration Options
 
-| Option            | Type   | Default                                         | Description                                                        |
-| ----------------- | ------ | ----------------------------------------------- | ------------------------------------------------------------------ |
-| `plexusUrl`       | string | `http://localhost:8080`                         | URL of the Plexus server (used when `plexusAdminKey` is set)       |
-| `syntheticApiUrl` | string | `https://api.synthetic.new/openai/v1`           | URL of the Synthetic API (used when `plexusAdminKey` is not set)   |
-| `providerName`    | string | `synthetic` (or `synthetic-plexus` with Plexus) | Name for the provider in OpenCode config                           |
-| `syntheticApiKey` | string | -                                               | API key for Synthetic API (required)                               |
-| `plexusAdminKey`  | string | -                                               | Admin key for Plexus management API (enables Plexus mode when set) |
-| `cacheDiscount`   | number | `80`                                            | Cache read discount percentage (0–100) applied to the API price    |
-| `modelOptions`    | object | `{}`                                            | Custom model config merged with generated config                   |
+| Option                          | Type   | Default                               | Description                                                                      |
+| ------------------------------- | ------ | ------------------------------------- | -------------------------------------------------------------------------------- |
+| `plexusUrl`                     | string | `http://localhost:8080`               | URL of the Plexus server (used when `plexusAdminKey` is set)                     |
+| `syntheticApiUrl`               | string | `https://api.synthetic.new/openai/v1` | URL of the Synthetic API (used when `plexusAdminKey` is not set)                 |
+| `openCodeSyntheticProviderName` | string | `synthetic-direct`                    | Name for the direct Synthetic provider in OpenCode (cannot be `"synthetic"`)     |
+| `openCodePlexusProviderName`    | string | —                                     | Name for the Plexus provider in OpenCode (required to enable Plexus in OpenCode) |
+| `plexusProviderName`            | string | `synthetic`                           | Name for the provider inside Plexus (only used in Plexus mode)                   |
+| `syntheticApiKey`               | string | -                                     | API key for Synthetic API (required)                                             |
+| `plexusAdminKey`                | string | -                                     | Admin key for Plexus management API (enables Plexus mode when set)               |
+| `cacheDiscount`                 | number | `80`                                  | Cache read discount percentage (0–100) applied to the API price                  |
+| `modelOptions`                  | object | `{}`                                  | Custom model config merged with generated config                                 |
 
 ### Cache Discount
 
@@ -174,10 +191,10 @@ You can check [models.dev/api.json](https://models.dev/api.json) to see which `i
 
 1. On OpenCode startup, the plugin loads configuration from global and project config files
 2. It fetches available models from the Synthetic API
-3. It updates OpenCode's in-memory configuration with Synthetic API as the provider URL directly
+3. If `openCodeSyntheticProviderName` is set (defaults to `"synthetic-direct"`), it registers a direct Synthetic provider in OpenCode
 4. If `plexusAdminKey` is set:
    - It syncs those models to Plexus, creating/updating providers and aliases
-   - It updates OpenCode's in-memory configuration with Plexus as the provider URL
+   - If `openCodePlexusProviderName` is set, it registers a Plexus provider in OpenCode
 
 ## Connecting the Provider in OpenCode
 
@@ -185,7 +202,7 @@ After configuring the plugin, connect the provider in OpenCode:
 
 1. Run `opencode provider login`
 2. Scroll down and select `other`
-3. Type the provider name (e.g., `synthetic` or `synthetic-plexus` depending on your config)
+3. Type the provider name matching your config (e.g., `synthetic-direct` for direct mode, or `synthetic-plexus` for Plexus mode — see `openCodeSyntheticProviderName` and `openCodePlexusProviderName`). Note: the name `synthetic` is not allowed as it collides with models.dev.
 4. Enter the API key:
    - **Direct Synthetic**: Use the same Synthetic API key from your config
    - **Plexus**: Create an API key through the Plexus dashboard (Keys section) and use its secret

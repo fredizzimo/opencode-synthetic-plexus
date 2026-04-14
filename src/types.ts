@@ -115,7 +115,9 @@ export interface OpenCodeModelConfig {
 export interface PluginConfig {
   plexusUrl?: string;
   syntheticApiUrl?: string;
-  providerName?: string;
+  openCodeSyntheticProviderName?: string;
+  openCodePlexusProviderName?: string;
+  plexusProviderName?: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
   cacheDiscount?: number;
@@ -125,7 +127,9 @@ export interface PluginConfig {
 export interface ResolvedPluginConfig {
   plexusUrl: string;
   syntheticApiUrl: string;
-  providerName: string;
+  openCodeSyntheticProviderName: string;
+  openCodePlexusProviderName?: string;
+  plexusProviderName: string;
   syntheticApiKey?: string;
   plexusAdminKey?: string;
   cacheDiscount: number;

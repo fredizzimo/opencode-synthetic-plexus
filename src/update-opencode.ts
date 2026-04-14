@@ -22,11 +22,15 @@ export function deepMerge(target: Record<string, unknown>, source: Record<string
 
 export function convertSyntheticModelToOpenCode(
   model: SyntheticModel,
+  useModelId: boolean,
   userConfig?: Record<string, unknown>,
   cacheDiscount: number = 0,
 ): OpenCodeModelConfig {
   const modelConfig: OpenCodeModelConfig = {};
 
+  if (useModelId) {
+    modelConfig.id = model.id;
+  }
   modelConfig.name = getModelSimpleName(model.id);
 
   if (model.supported_features?.includes("tools")) {
@@ -77,7 +81,8 @@ export function convertSyntheticModelToOpenCode(
 export function buildProviderConfig(
   models: SyntheticModel[],
   baseURL: string,
-  providerName: string,
+  openCodeProviderName: string,
+  useModelId: boolean,
   modelOptions?: Record<string, Record<string, unknown>>,
   cacheDiscount: number = 0,
 ): {
@@ -92,12 +97,17 @@ export function buildProviderConfig(
 
   for (const model of models) {
     const aliasName = aliasMap.get(model.id)!;
-    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(model, modelOptions?.[aliasName], cacheDiscount);
+    modelsConfig[aliasName] = convertSyntheticModelToOpenCode(
+      model,
+      useModelId,
+      modelOptions?.[aliasName],
+      cacheDiscount,
+    );
   }
 
   return {
     npm: "@ai-sdk/openai-compatible",
-    name: providerName,
+    name: openCodeProviderName,
     options: { baseURL },
     models: modelsConfig,
   };
@@ -107,15 +117,23 @@ export function updateOpenCodeConfig(
   config: OpenCodeAppConfig,
   models: SyntheticModel[],
   baseURL: string,
-  providerName: string,
+  openCodeProviderName: string,
+  useModelId: boolean,
   modelOptions: Record<string, Record<string, unknown>>,
   cacheDiscount: number,
   logger: Logger,
 ): OpenCodeAppConfig {
-  const providerConfig = buildProviderConfig(models, baseURL, providerName, modelOptions, cacheDiscount);
+  const providerConfig = buildProviderConfig(
+    models,
+    baseURL,
+    openCodeProviderName,
+    useModelId,
+    modelOptions,
+    cacheDiscount,
+  );
 
   const provider = config.provider || {};
-  provider[providerName] = providerConfig as unknown;
+  provider[openCodeProviderName] = providerConfig as unknown;
   config.provider = provider;
 
   logger.info(`Updated config with ${models.length} models`);

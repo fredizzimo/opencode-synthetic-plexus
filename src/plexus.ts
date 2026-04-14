@@ -32,11 +32,15 @@ function buildSyntheticProviderModels(
   return result;
 }
 
-export function buildSyntheticAlias(model: SyntheticModel, existingAlias?: PlexusAlias): PlexusAlias {
+export function buildSyntheticAlias(
+  model: SyntheticModel,
+  existingAlias?: PlexusAlias,
+  plexusProviderName: string = "synthetic",
+): PlexusAlias {
   const targets = existingAlias?.targets || [];
-  const nonSyntheticTargets = targets.filter((t) => t.provider !== "synthetic");
+  const nonSyntheticTargets = targets.filter((t) => t.provider !== plexusProviderName);
   const syntheticTarget: PlexusTarget = {
-    provider: "synthetic",
+    provider: plexusProviderName,
     model: model.id,
     enabled: true,
   };
@@ -216,12 +220,13 @@ export async function syncPlexusModels(
   logger: Logger,
   syntheticApiKey?: string,
   cacheDiscount: number = 0,
+  plexusProviderName: string = "synthetic",
 ): Promise<SyncResult> {
   logger.info("Starting model sync...");
 
   const existingAliases = await fetchPlexusAliases(plexusUrl, adminKey, logger);
 
-  const existingProvider = await fetchPlexusProvider(plexusUrl, "synthetic", adminKey);
+  const existingProvider = await fetchPlexusProvider(plexusUrl, plexusProviderName, adminKey);
   const defaultQuotaChecker: QuotaChecker = {
     type: "synthetic",
     enabled: true,
@@ -238,7 +243,7 @@ export async function syncPlexusModels(
     quota_checker: existingProvider?.quota_checker ?? defaultQuotaChecker,
   };
 
-  await savePlexusProvider(plexusUrl, "synthetic", syntheticProvider, adminKey);
+  await savePlexusProvider(plexusUrl, plexusProviderName, syntheticProvider, adminKey);
 
   const aliasMap = buildModelAliases(syntheticModels.map((m) => m.id));
 
@@ -247,7 +252,7 @@ export async function syncPlexusModels(
     async (model) => {
       const aliasName = aliasMap.get(model.id)!;
       const existingAlias = existingAliases[aliasName];
-      const aliasConfig = buildSyntheticAlias(model, existingAlias);
+      const aliasConfig = buildSyntheticAlias(model, existingAlias, plexusProviderName);
       await savePlexusAlias(plexusUrl, aliasName, aliasConfig, adminKey);
     },
     ALIAS_CONCURRENCY,
@@ -270,10 +275,12 @@ export async function syncPlexusModels(
 
   for (const [aliasName, alias] of Object.entries(existingAliases)) {
     if (savedAliasNames.has(aliasName)) continue;
-    const staleTargets = alias.targets.filter((t) => t.provider === "synthetic" && !currentModelIds.has(t.model));
+    const staleTargets = alias.targets.filter(
+      (t) => t.provider === plexusProviderName && !currentModelIds.has(t.model),
+    );
     if (staleTargets.length === 0) continue;
     const remainingTargets = alias.targets.filter(
-      (t) => !(t.provider === "synthetic" && !currentModelIds.has(t.model)),
+      (t) => !(t.provider === plexusProviderName && !currentModelIds.has(t.model)),
     );
     if (remainingTargets.length === 0) {
       aliasesToDelete.push(aliasName);
